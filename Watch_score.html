@@ -15,6 +15,7 @@
     html,body{ height:100%; margin:0; background: radial-gradient(120% 100% at 50% 0%, #0b0b18 0%, var(--bg) 55%, #000 100%); color:var(--txt); }
     body{ display:flex; align-items:center; justify-content:center; overflow:hidden; }
 
+    /* Round-screen friendly padding */
     .wrap{
       width:100%; height:100%;
       padding:10px;
@@ -23,7 +24,7 @@
       gap:10px;
     }
 
-    /* TOP: TEAM | S1 | S2 | S3 | S4 | S5 | PTS */
+    /* TOP: TEAM | S1 | S2 | S3 | PTS */
     .mini{
       border:1px solid var(--line);
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
@@ -31,7 +32,7 @@
       box-shadow: var(--shadow);
       padding:8px;
       display:grid;
-      grid-template-columns: 1.25fr .75fr .75fr .75fr .75fr .75fr .85fr;
+      grid-template-columns: 1.25fr .9fr .9fr .9fr .95fr;
       grid-template-rows: repeat(2, 1fr);
       gap:6px;
     }
@@ -45,7 +46,7 @@
       font-size: 15px;
       letter-spacing:.2px;
       color: rgba(255,255,255,.86);
-      min-height: 28px;
+      min-height: 26px;
       overflow:hidden;
     }
     .dim{ color: rgba(255,255,255,.30); }
@@ -58,20 +59,19 @@
       padding:0 10px;
       font-weight:1150;
       letter-spacing:.3px;
-      font-size:14px;
+      font-size:13px;
       color: rgba(255,255,255,.85);
     }
     .badge{
-      width:18px; height:18px; border-radius:999px;
+      width:16px; height:16px; border-radius:999px;
       border:1px solid rgba(255,255,255,.25);
-      background: rgba(255,255,255,.10);
       flex:0 0 auto;
       box-shadow: 0 10px 22px rgba(0,0,0,.45);
     }
     .badge.a{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(0,240,255,.85) 55%, rgba(29,124,255,.75)); }
     .badge.b{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(181,107,255,.85) 55%, rgba(255,77,184,.75)); }
 
-    /* MID: big tappable zones showing only TEAM A / TEAM B */
+    /* MID: round friendly stage */
     .stage{
       border:1px solid var(--line);
       background: rgba(255,255,255,.03);
@@ -88,6 +88,8 @@
       background: rgba(255,255,255,.10);
       pointer-events:none;
     }
+
+    /* Zones */
     .zone{
       position:relative;
       display:flex;
@@ -102,22 +104,28 @@
       background: radial-gradient(80% 70% at 50% 35%, rgba(255,255,255,.08), transparent 55%);
       pointer-events:none;
     }
-    .zoneA{ background: linear-gradient(135deg, rgba(0,240,255,.18), rgba(29,124,255,.10)); }
-    .zoneB{ background: linear-gradient(225deg, rgba(181,107,255,.18), rgba(255,77,184,.10)); }
+    .zoneA{ background: linear-gradient(135deg, rgba(0,240,255,.16), rgba(29,124,255,.08)); }
+    .zoneB{ background: linear-gradient(225deg, rgba(181,107,255,.16), rgba(255,77,184,.08)); }
 
+    /* ✅ Smaller central labels (for round screens) */
     .label{
-      font-weight:1250;
-      font-size: clamp(22px, 7vw, 34px);
-      letter-spacing:1.2px;
+      font-weight:1200;
+      font-size: clamp(16px, 5.6vw, 24px);
+      letter-spacing:1.1px;
       opacity:.92;
       text-shadow: 0 14px 50px rgba(0,0,0,.65);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(6px);
     }
 
     /* Serve ball */
     .serve{
       position:absolute;
-      top:10px;
-      width:22px; height:22px;
+      top:8px;
+      width:20px; height:20px;
       border-radius:999px;
       border:1px solid rgba(255,255,255,.35);
       background:
@@ -130,10 +138,10 @@
       opacity:.95;
     }
     .serve.show{ display:block; }
-    .serve.left{ left:10px; }
-    .serve.right{ right:10px; }
+    .serve.left{ left:8px; }
+    .serve.right{ right:8px; }
 
-    /* BOTTOM */
+    /* Bottom buttons */
     .bottom{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -145,7 +153,7 @@
       border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.03);
       border-radius:18px;
-      padding:12px 8px;
+      padding:10px 8px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -174,7 +182,7 @@
     .hint{
       position:absolute;
       left:50%; transform: translateX(-50%);
-      bottom: 62px;
+      bottom: 58px;
       font-weight:900;
       font-size:12px;
       color: rgba(255,255,255,.55);
@@ -183,7 +191,7 @@
       background: rgba(0,0,0,.25);
       border-radius:999px;
       backdrop-filter: blur(6px);
-      min-width: 90px;
+      min-width: 86px;
       text-align:center;
       opacity:0;
       transition: opacity .12s;
@@ -196,22 +204,16 @@
   <div class="wrap">
 
     <div class="mini">
-      <!-- Row A -->
       <div class="cell teamCell"><span class="badge a"></span>TEAM A</div>
       <div class="cell" id="aS1">0</div>
       <div class="cell dim" id="aS2">0</div>
       <div class="cell dim" id="aS3">0</div>
-      <div class="cell dim" id="aS4">0</div>
-      <div class="cell dim" id="aS5">0</div>
       <div class="cell" id="aPts">0</div>
 
-      <!-- Row B -->
       <div class="cell teamCell"><span class="badge b"></span>TEAM B</div>
       <div class="cell" id="bS1">0</div>
       <div class="cell dim" id="bS2">0</div>
       <div class="cell dim" id="bS3">0</div>
-      <div class="cell dim" id="bS4">0</div>
-      <div class="cell dim" id="bS5">0</div>
       <div class="cell" id="bPts">0</div>
     </div>
 
@@ -244,8 +246,8 @@
 
 <script>
 (() => {
-  // First to win 3 sets = best of 5 sets
-  const rules = { noAd:true, tieBreakAt66:true, setsToWin:3, maxSets:5 };
+  // ✅ Best of 3 sets: first to 2 sets wins.
+  const rules = { noAd:true, tieBreakAt66:true, setsToWin:2, maxSets:3 };
 
   const st = {
     locked:false,
@@ -268,8 +270,8 @@
 
   const $ = (id) => document.getElementById(id);
   const ui = {
-    aS:[ $("aS1"),$("aS2"),$("aS3"),$("aS4"),$("aS5") ],
-    bS:[ $("bS1"),$("bS2"),$("bS3"),$("bS4"),$("bS5") ],
+    aS:[ $("aS1"),$("aS2"),$("aS3") ],
+    bS:[ $("bS1"),$("bS2"),$("bS3") ],
     aPts:$("aPts"), bPts:$("bPts"),
     zoneA:$("zoneA"), zoneB:$("zoneB"),
     serveA:$("serveA"), serveB:$("serveB"),
@@ -364,16 +366,19 @@
   function endSet(winner){
     st.setsWon[winner]++;
 
+    // reset point/tb state
     st.points=[0,0];
     st.tieBreak=false;
     st.tb=[0,0];
     st.tbPointsTotal=0;
 
+    // match end?
     if (st.setsWon[0] >= rules.setsToWin || st.setsWon[1] >= rules.setsToWin){
       st.finished = true;
       return;
     }
 
+    // next set
     if (st.currentSet < rules.maxSets - 1){
       st.currentSet++;
     } else {
@@ -387,6 +392,7 @@
     const lead=Math.abs(a-b);
     const mx=Math.max(a,b);
 
+    // 6 with 2 lead OR 7-5
     if ((mx===6 && lead>=2) || (mx===7 && lead>=2)){
       endSet(a>b ? 0 : 1);
       return true;
@@ -408,7 +414,7 @@
     st.points=[0,0];
   }
 
-  // TB service pattern: 1 then 2; side flips each point
+  // TB service: 1 then 2; side flips each point
   function tbRotateServeAfterPoint(){
     st.tbPointsTotal++;
     if (st.tbPointsTotal === 1 || (st.tbPointsTotal > 1 && (st.tbPointsTotal % 2 === 1))){
