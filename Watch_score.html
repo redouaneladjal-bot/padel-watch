@@ -3,285 +3,339 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Padel Watch Score</title>
+  <title>Padel Watch</title>
   <style>
     :root{
-      --bg:#000; --text:#fff; --muted:#bdbdbd; --line:#2a2a2a;
-      --a:#00f0ff; --b:#b56bff; --danger:#ff4d4d; --ok:#36ff8b;
+      --bg:#050509;
+      --line:rgba(255,255,255,.10);
+      --txt:rgba(255,255,255,.92);
+      --shadow: 0 18px 60px rgba(0,0,0,.65);
     }
     *{ box-sizing:border-box; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-    html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); }
-    body{ display:flex; align-items:center; justify-content:center; }
-    .wrap{ width:100%; height:100%; padding:10px; display:grid; grid-template-rows:auto 1fr auto; gap:8px; }
+    html,body{ height:100%; margin:0; background: radial-gradient(120% 100% at 50% 0%, #0b0b18 0%, var(--bg) 55%, #000 100%); color:var(--txt); }
+    body{ display:flex; align-items:center; justify-content:center; overflow:hidden; }
 
-    .top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .pill{
-      border:2px solid var(--line);
-      background:#070707;
-      border-radius:999px;
-      padding:6px 10px;
-      font-weight:950;
-      font-size:12px;
-      color:var(--muted);
-      white-space:nowrap;
-    }
-    .pill strong{ color:var(--text); }
-
-    .board{
-      border:2px solid var(--line);
-      border-radius:18px;
-      background:#0a0a0a;
+    .wrap{
+      width:100%; height:100%;
       padding:10px;
       display:grid;
-      grid-template-rows:auto 1fr auto;
-      gap:8px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.55);
-    }
-
-    .names{ display:flex; justify-content:space-between; gap:8px; }
-    .name{
-      flex:1;
-      text-align:center;
-      font-weight:1100;
-      font-size:14px;
-      padding:8px 6px;
-      border-radius:14px;
-      border:2px solid var(--line);
-      background:#050505;
-      user-select:none;
-    }
-    .name.a{ border-color: rgba(0,240,255,.45); }
-    .name.b{ border-color: rgba(181,107,255,.45); }
-
-    .scores{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      align-items:center;
-    }
-
-    .scoreBox{
-      border:2px solid var(--line);
-      border-radius:18px;
-      background:#050505;
-      padding:10px 8px;
-      text-align:center;
-    }
-
-    .miniRow{ display:flex; justify-content:space-between; gap:6px; color:var(--muted); font-weight:950; font-size:12px; }
-    .miniRow span b{ color:var(--text); font-size:14px; }
-
-    .big{
-      margin-top:6px;
-      font-weight:1200;
-      font-size: clamp(42px, 10vw, 64px);
-      line-height:1;
-      letter-spacing:0.5px;
-      text-shadow: 0 10px 40px rgba(0,0,0,.7);
-    }
-    .mode{
-      margin-top:6px;
-      color:var(--muted);
-      font-weight:950;
-      font-size:12px;
-      min-height:14px;
-    }
-
-    .buttons{
-      display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-rows: auto 1fr auto;
       gap:10px;
     }
-    button{
-      border:2px solid var(--line);
-      background:#070707;
-      color:var(--text);
-      border-radius:18px;
-      font-weight:1200;
-      font-size:16px;
-      padding:12px 10px;
-      user-select:none;
-      touch-action: manipulation;
-      position:relative;
+
+    /* TOP: TEAM | S1 | S2 | S3 | S4 | S5 | PTS */
+    .mini{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:8px;
+      display:grid;
+      grid-template-columns: 1.25fr .75fr .75fr .75fr .75fr .75fr .85fr;
+      grid-template-rows: repeat(2, 1fr);
+      gap:6px;
+    }
+    .cell{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      background: rgba(0,0,0,.25);
+      display:grid;
+      place-items:center;
+      font-weight:1050;
+      font-size: 15px;
+      letter-spacing:.2px;
+      color: rgba(255,255,255,.86);
+      min-height: 28px;
       overflow:hidden;
     }
-    button:active{ transform: translateY(1px); }
+    .dim{ color: rgba(255,255,255,.30); }
 
-    .pointBtn{
-      aspect-ratio: 1 / 1; /* square */
-      display:flex; align-items:center; justify-content:center;
-      font-size:16px;
-      letter-spacing:.2px;
+    .teamCell{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      padding:0 10px;
+      font-weight:1150;
+      letter-spacing:.3px;
+      font-size:14px;
+      color: rgba(255,255,255,.85);
     }
-    .pointA{ border-color: rgba(0,240,255,.65); background: rgba(0,240,255,.14); }
-    .pointB{ border-color: rgba(181,107,255,.65); background: rgba(181,107,255,.14); }
+    .badge{
+      width:18px; height:18px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.10);
+      flex:0 0 auto;
+      box-shadow: 0 10px 22px rgba(0,0,0,.45);
+    }
+    .badge.a{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(0,240,255,.85) 55%, rgba(29,124,255,.75)); }
+    .badge.b{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(181,107,255,.85) 55%, rgba(255,77,184,.75)); }
 
-    .bottomBar{
+    /* MID: big tappable zones showing only TEAM A / TEAM B */
+    .stage{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      position:relative;
+    }
+    .divider{
+      position:absolute; top:0; bottom:0; left:50%;
+      width:1px;
+      background: rgba(255,255,255,.10);
+      pointer-events:none;
+    }
+    .zone{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    .zone::before{
+      content:"";
+      position:absolute; inset:-50px;
+      background: radial-gradient(80% 70% at 50% 35%, rgba(255,255,255,.08), transparent 55%);
+      pointer-events:none;
+    }
+    .zoneA{ background: linear-gradient(135deg, rgba(0,240,255,.18), rgba(29,124,255,.10)); }
+    .zoneB{ background: linear-gradient(225deg, rgba(181,107,255,.18), rgba(255,77,184,.10)); }
+
+    .label{
+      font-weight:1250;
+      font-size: clamp(22px, 7vw, 34px);
+      letter-spacing:1.2px;
+      opacity:.92;
+      text-shadow: 0 14px 50px rgba(0,0,0,.65);
+    }
+
+    /* Serve ball */
+    .serve{
+      position:absolute;
+      top:10px;
+      width:22px; height:22px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.35);
+      background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(255,255,255,.45) 45%, rgba(0,0,0,.20) 70%),
+        radial-gradient(circle at 70% 70%, rgba(255,210,80,.95), rgba(255,210,80,.15) 60%, transparent 70%);
+      box-shadow: 0 10px 26px rgba(0,0,0,.55);
+      display:none;
+      user-select:none;
+      touch-action: manipulation;
+      opacity:.95;
+    }
+    .serve.show{ display:block; }
+    .serve.left{ left:10px; }
+    .serve.right{ right:10px; }
+
+    /* BOTTOM */
+    .bottom{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap:8px;
+      gap:10px;
       align-items:center;
     }
-
-    .smallBtn{ padding:10px 8px; font-size:13px; border-radius:16px; }
-    .danger{ border-color: rgba(255,77,77,.65); background: rgba(255,77,77,.12); }
-    .lockOn{ border-color: rgba(255,77,77,.75); background: rgba(255,77,77,.14); }
+    .btn{
+      position:relative;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      border-radius:18px;
+      padding:12px 8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      touch-action: manipulation;
+      box-shadow: 0 10px 28px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .ico{ font-size:18px; line-height:1; opacity:.92; filter: drop-shadow(0 8px 20px rgba(0,0,0,.55)); }
+    .lockOn{ border-color: rgba(255,77,77,.35); background: rgba(255,77,77,.10); }
 
     .holdBar{
-      position:absolute; left:0; top:0; bottom:0;
+      position:absolute; inset:0;
       width:0%;
+      background: rgba(54,255,139,.12);
+      border-right: 2px solid rgba(54,255,139,.45);
       pointer-events:none;
       transition: width 0s;
     }
-    .holdOk{ background: rgba(54,255,139,.18); border-right:2px solid rgba(54,255,139,.55); }
-    .holdDanger{ background: rgba(255,77,77,.16); border-right:2px solid rgba(255,77,77,.55); }
+    .holdDanger{
+      background: rgba(255,77,77,.10);
+      border-right: 2px solid rgba(255,77,77,.45);
+    }
 
     .hint{
-      text-align:center;
-      color:var(--muted);
-      font-weight:950;
+      position:absolute;
+      left:50%; transform: translateX(-50%);
+      bottom: 62px;
+      font-weight:900;
       font-size:12px;
-      min-height:14px;
+      color: rgba(255,255,255,.55);
+      padding:6px 10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      border-radius:999px;
+      backdrop-filter: blur(6px);
+      min-width: 90px;
+      text-align:center;
+      opacity:0;
+      transition: opacity .12s;
+      pointer-events:none;
     }
-
-    .toggles{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-    }
-    .toggleBtn{ padding:10px 8px; font-size:12px; border-radius:16px; }
+    .hint.show{ opacity:1; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
-      <div class="pill">Rules: <strong id="rulesPill">No-Ad • TB 6–6</strong></div>
-      <div class="pill">Sets to win: <strong id="setsToWinPill">6</strong></div>
+
+    <div class="mini">
+      <!-- Row A -->
+      <div class="cell teamCell"><span class="badge a"></span>TEAM A</div>
+      <div class="cell" id="aS1">0</div>
+      <div class="cell dim" id="aS2">0</div>
+      <div class="cell dim" id="aS3">0</div>
+      <div class="cell dim" id="aS4">0</div>
+      <div class="cell dim" id="aS5">0</div>
+      <div class="cell" id="aPts">0</div>
+
+      <!-- Row B -->
+      <div class="cell teamCell"><span class="badge b"></span>TEAM B</div>
+      <div class="cell" id="bS1">0</div>
+      <div class="cell dim" id="bS2">0</div>
+      <div class="cell dim" id="bS3">0</div>
+      <div class="cell dim" id="bS4">0</div>
+      <div class="cell dim" id="bS5">0</div>
+      <div class="cell" id="bPts">0</div>
     </div>
 
-    <div class="board">
-      <div class="names">
-        <div class="name a" id="nameA">TEAM A</div>
-        <div class="name b" id="nameB">TEAM B</div>
+    <div class="stage">
+      <div class="zone zoneA" id="zoneA">
+        <div class="serve" id="serveA"></div>
+        <div class="label">TEAM A</div>
       </div>
-
-      <div class="scores">
-        <div class="scoreBox">
-          <div class="miniRow">
-            <span>SETS <b id="setsA">0</b></span>
-            <span>GAMES <b id="gamesA">0</b></span>
-          </div>
-          <div class="big" id="bigA">0</div>
-          <div class="mode" id="modeA">—</div>
-        </div>
-
-        <div class="scoreBox">
-          <div class="miniRow">
-            <span>SETS <b id="setsB">0</b></span>
-            <span>GAMES <b id="gamesB">0</b></span>
-          </div>
-          <div class="big" id="bigB">0</div>
-          <div class="mode" id="modeB">—</div>
-        </div>
+      <div class="divider"></div>
+      <div class="zone zoneB" id="zoneB">
+        <div class="serve" id="serveB"></div>
+        <div class="label">TEAM B</div>
       </div>
+      <div class="hint" id="hint">🔒</div>
+    </div>
 
-      <div class="buttons">
-        <button id="pA" class="pointBtn pointA">+ Point A</button>
-        <button id="pB" class="pointBtn pointB">+ Point B</button>
+    <div class="bottom">
+      <div class="btn" id="lockBtn"><div class="ico" id="lockIco">🔒</div></div>
+      <div class="btn" id="undoBtn">
+        <div class="holdBar" id="undoBar"></div>
+        <div class="ico">↶</div>
       </div>
-
-      <div class="hint" id="hint"></div>
-
-      <div class="bottomBar">
-        <button id="undo" class="smallBtn">
-          <div class="holdBar holdOk" id="undoBar"></div>
-          Undo (hold)
-        </button>
-        <button id="reset" class="smallBtn danger">
-          <div class="holdBar holdDanger" id="resetBar"></div>
-          Reset (hold)
-        </button>
-        <button id="lock" class="smallBtn">🔒 Lock</button>
-      </div>
-
-      <div class="toggles">
-        <button id="toggleNoAd" class="toggleBtn">No-Ad: ON</button>
-        <button id="toggleSets" class="toggleBtn">Sets to win: 6</button>
+      <div class="btn" id="resetBtn">
+        <div class="holdBar holdDanger" id="resetBar"></div>
+        <div class="ico">⟲</div>
       </div>
     </div>
+
   </div>
 
 <script>
 (() => {
-  const $ = (id) => document.getElementById(id);
-  const ui = {
-    rulesPill: $("rulesPill"),
-    setsToWinPill: $("setsToWinPill"),
-    setsA: $("setsA"), setsB: $("setsB"),
-    gamesA: $("gamesA"), gamesB: $("gamesB"),
-    bigA: $("bigA"), bigB: $("bigB"),
-    modeA: $("modeA"), modeB: $("modeB"),
-    pA: $("pA"), pB: $("pB"),
-    undo: $("undo"), reset: $("reset"), lock: $("lock"),
-    undoBar: $("undoBar"), resetBar: $("resetBar"),
-    hint: $("hint"),
-    toggleNoAd: $("toggleNoAd"),
-    toggleSets: $("toggleSets"),
-  };
+  // First to win 3 sets = best of 5 sets
+  const rules = { noAd:true, tieBreakAt66:true, setsToWin:3, maxSets:5 };
 
-  // Rules (padel typical)
-  const rules = { noAd:true, tieBreakAt66:true, setsToWin:6 };
-
-  // State + history (UNDO includes RESET)
   const st = {
-    points:[0,0],
-    games:[0,0],
-    sets:[0,0],
-    tieBreak:false,
-    tb:[0,0],
     locked:false,
     finished:false,
+
+    points:[0,0],
+    setGames: Array.from({length: rules.maxSets}, () => [0,0]),
+    currentSet:0,
+
+    tieBreak:false,
+    tb:[0,0],
+    tbPointsTotal:0,
+
+    setsWon:[0,0],
+    serveTeam:0,
+    serveSide:0,
+
     history:[]
   };
 
-  function setHint(t){ ui.hint.textContent = t || ""; }
+  const $ = (id) => document.getElementById(id);
+  const ui = {
+    aS:[ $("aS1"),$("aS2"),$("aS3"),$("aS4"),$("aS5") ],
+    bS:[ $("bS1"),$("bS2"),$("bS3"),$("bS4"),$("bS5") ],
+    aPts:$("aPts"), bPts:$("bPts"),
+    zoneA:$("zoneA"), zoneB:$("zoneB"),
+    serveA:$("serveA"), serveB:$("serveB"),
+    lockBtn:$("lockBtn"), lockIco:$("lockIco"),
+    undoBtn:$("undoBtn"), undoBar:$("undoBar"),
+    resetBtn:$("resetBtn"), resetBar:$("resetBar"),
+    hint:$("hint"),
+  };
 
+  function showHint(txt){
+    ui.hint.textContent = txt;
+    ui.hint.classList.add("show");
+    clearTimeout(showHint._t);
+    showHint._t = setTimeout(()=> ui.hint.classList.remove("show"), 520);
+  }
+
+  // Snapshot WITHOUT history (prevents freeze)
+  function makeSnapshot(){
+    return {
+      locked: st.locked,
+      finished: st.finished,
+      points: [st.points[0], st.points[1]],
+      setGames: st.setGames.map(s => [s[0], s[1]]),
+      currentSet: st.currentSet,
+      tieBreak: st.tieBreak,
+      tb: [st.tb[0], st.tb[1]],
+      tbPointsTotal: st.tbPointsTotal,
+      setsWon: [st.setsWon[0], st.setsWon[1]],
+      serveTeam: st.serveTeam,
+      serveSide: st.serveSide
+    };
+  }
+  function applySnapshot(snap){
+    st.locked = snap.locked;
+    st.finished = snap.finished;
+    st.points = [snap.points[0], snap.points[1]];
+    st.setGames = snap.setGames.map(s => [s[0], s[1]]);
+    st.currentSet = snap.currentSet;
+    st.tieBreak = snap.tieBreak;
+    st.tb = [snap.tb[0], snap.tb[1]];
+    st.tbPointsTotal = snap.tbPointsTotal;
+    st.setsWon = [snap.setsWon[0], snap.setsWon[1]];
+    st.serveTeam = snap.serveTeam;
+    st.serveSide = snap.serveSide;
+  }
   function snapshot(){
-    st.history.push(JSON.parse(JSON.stringify({
-      points: st.points, games: st.games, sets: st.sets,
-      tieBreak: st.tieBreak, tb: st.tb,
-      locked: st.locked, finished: st.finished,
-      rules: { ...rules }
-    })));
-    if (st.history.length > 80) st.history.shift();
+    st.history.push(makeSnapshot());
+    if (st.history.length > 120) st.history.shift();
   }
-
-  function restore(prev){
-    st.points = prev.points;
-    st.games = prev.games;
-    st.sets = prev.sets;
-    st.tieBreak = prev.tieBreak;
-    st.tb = prev.tb;
-    st.locked = prev.locked;
-    st.finished = prev.finished;
-    rules.noAd = prev.rules.noAd;
-    rules.tieBreakAt66 = prev.rules.tieBreakAt66;
-    rules.setsToWin = prev.rules.setsToWin;
-  }
-
   function undo(){
     if (st.locked) return false;
     const prev = st.history.pop();
     if (!prev) return false;
-    restore(prev);
+    applySnapshot(prev);
     return true;
   }
-
   function resetAll(){
     if (st.locked) return false;
     snapshot();
-    st.points=[0,0]; st.games=[0,0]; st.sets=[0,0];
-    st.tieBreak=false; st.tb=[0,0]; st.finished=false;
+    st.locked=false; st.finished=false;
+    st.points=[0,0];
+    st.setGames = Array.from({length: rules.maxSets}, () => [0,0]);
+    st.currentSet=0;
+    st.tieBreak=false; st.tb=[0,0]; st.tbPointsTotal=0;
+    st.setsWon=[0,0];
+    st.serveTeam=0; st.serveSide=0;
     return true;
   }
 
@@ -289,97 +343,157 @@
     if (p===0) return "0";
     if (p===1) return "15";
     if (p===2) return "30";
-    if (p===3) return "40";
-    return "A";
+    return "40";
+  }
+  function gamesNow(){ return st.setGames[st.currentSet]; }
+
+  function rotateServeAfterGame(){
+    st.serveTeam = 1 - st.serveTeam;
+    st.serveSide = 1 - st.serveSide;
   }
 
-  function isDeuce(){
-    return !st.tieBreak && st.points[0]>=3 && st.points[1]>=3 && st.points[0]===st.points[1];
+  function maybeStartTB(){
+    const g = gamesNow();
+    if (rules.tieBreakAt66 && g[0]===6 && g[1]===6){
+      st.tieBreak = true;
+      st.tb=[0,0];
+      st.tbPointsTotal=0;
+    }
   }
 
-  function winSet(w){
-    st.sets[w]++; st.games=[0,0]; st.points=[0,0]; st.tieBreak=false; st.tb=[0,0];
-    if (st.sets[w] >= rules.setsToWin) st.finished = true;
-  }
+  function endSet(winner){
+    st.setsWon[winner]++;
 
-  function winGame(w){
-    st.games[w]++; st.points=[0,0];
+    st.points=[0,0];
+    st.tieBreak=false;
+    st.tb=[0,0];
+    st.tbPointsTotal=0;
 
-    if (rules.tieBreakAt66 && st.games[0]===6 && st.games[1]===6){
-      st.tieBreak=true; st.tb=[0,0];
+    if (st.setsWon[0] >= rules.setsToWin || st.setsWon[1] >= rules.setsToWin){
+      st.finished = true;
       return;
     }
 
-    const a=st.games[0], b=st.games[1], lead=Math.abs(a-b), mx=Math.max(a,b);
-    if (mx>=6 && lead>=2) winSet(a>b?0:1);
-  }
-
-  function tbPoint(w){
-    st.tb[w]++;
-    const a=st.tb[0], b=st.tb[1], lead=Math.abs(a-b), mx=Math.max(a,b);
-    if (mx>=7 && lead>=2){
-      // TB decides set
-      winSet(w);
+    if (st.currentSet < rules.maxSets - 1){
+      st.currentSet++;
+    } else {
+      st.finished = true;
     }
   }
 
-  function point(w){
-    if (st.locked || st.finished) return;
+  function checkSetWinNormal(){
+    const g = gamesNow();
+    const a=g[0], b=g[1];
+    const lead=Math.abs(a-b);
+    const mx=Math.max(a,b);
+
+    if ((mx===6 && lead>=2) || (mx===7 && lead>=2)){
+      endSet(a>b ? 0 : 1);
+      return true;
+    }
+    return false;
+  }
+
+  function winGame(team){
+    const g = gamesNow();
+    g[team]++;
+
+    rotateServeAfterGame();
+    maybeStartTB();
+
+    if (!st.tieBreak){
+      checkSetWinNormal();
+    }
+
+    st.points=[0,0];
+  }
+
+  // TB service pattern: 1 then 2; side flips each point
+  function tbRotateServeAfterPoint(){
+    st.tbPointsTotal++;
+    if (st.tbPointsTotal === 1 || (st.tbPointsTotal > 1 && (st.tbPointsTotal % 2 === 1))){
+      st.serveTeam = 1 - st.serveTeam;
+    }
+    st.serveSide = 1 - st.serveSide;
+  }
+
+  function tbPoint(team){
+    st.tb[team]++;
+    tbRotateServeAfterPoint();
+
+    const a=st.tb[0], b=st.tb[1];
+    const mx=Math.max(a,b), lead=Math.abs(a-b);
+    if (mx>=7 && lead>=2){
+      const g = gamesNow();
+      g[team]=7; g[1-team]=6;
+      endSet(team);
+    }
+  }
+
+  function point(team){
+    if (st.locked){ showHint("🔒"); return; }
+    if (st.finished){ showHint("✓"); return; }
+
     snapshot();
 
     if (st.tieBreak){
-      tbPoint(w);
+      tbPoint(team);
+      render();
       return;
     }
 
-    st.points[w]++;
+    st.points[team]++;
     const a=st.points[0], b=st.points[1];
 
     if (rules.noAd){
-      // golden point when someone reaches 4 at/after deuce
-      if (a>=4 || b>=4) winGame(a>b?0:1);
+      if (a>=4 || b>=4) winGame(a>b ? 0 : 1);
     } else {
       const lead=Math.abs(a-b), mx=Math.max(a,b);
       if (mx>=4 && lead>=2) winGame(a>b?0:1);
     }
+
+    render();
   }
 
-  function render(){
-    ui.setsA.textContent = st.sets[0];
-    ui.setsB.textContent = st.sets[1];
-    ui.gamesA.textContent = st.games[0];
-    ui.gamesB.textContent = st.games[1];
+  function renderTable(){
+    for (let i=0;i<rules.maxSets;i++){
+      ui.aS[i].textContent = st.setGames[i][0];
+      ui.bS[i].textContent = st.setGames[i][1];
+      ui.aS[i].classList.toggle("dim", st.currentSet < i);
+      ui.bS[i].classList.toggle("dim", st.currentSet < i);
+    }
 
-    ui.setsToWinPill.textContent = rules.setsToWin;
-    ui.rulesPill.textContent = `${rules.noAd ? "No-Ad" : "Adv"} • TB 6–6`;
-
-    ui.toggleNoAd.textContent = `No-Ad: ${rules.noAd ? "ON" : "OFF"}`;
-    ui.toggleSets.textContent = `Sets to win: ${rules.setsToWin}`;
-
-    ui.lock.textContent = st.locked ? "🔓 Unlock" : "🔒 Lock";
-    ui.lock.classList.toggle("lockOn", st.locked);
-
-    if (st.finished){
-      ui.modeA.textContent = "Match finished";
-      ui.modeB.textContent = "Match finished";
-    } else if (st.tieBreak){
-      ui.bigA.textContent = st.tb[0];
-      ui.bigB.textContent = st.tb[1];
-      ui.modeA.textContent = "Tie-break";
-      ui.modeB.textContent = "Tie-break";
+    if (st.tieBreak){
+      ui.aPts.textContent = st.tb[0];
+      ui.bPts.textContent = st.tb[1];
     } else {
-      // No-Ad: show normal 0/15/30/40 only (no Advantage)
-      ui.bigA.textContent = scoreLabel(Math.min(st.points[0], 3));
-      ui.bigB.textContent = scoreLabel(Math.min(st.points[1], 3));
-      ui.modeA.textContent = rules.noAd && isDeuce() ? "Deciding point" : "Game";
-      ui.modeB.textContent = rules.noAd && isDeuce() ? "Deciding point" : "Game";
+      ui.aPts.textContent = scoreLabel(Math.min(st.points[0],3));
+      ui.bPts.textContent = scoreLabel(Math.min(st.points[1],3));
     }
   }
 
-  // Hold-to-confirm (safe)
-  function holdToConfirm({buttonEl, barEl, holdMs, onConfirm, hintText, doneText}) {
-    let holdTimer=null, holdStart=0, raf=null;
+  function renderServe(){
+    ui.serveA.classList.remove("show","left","right");
+    ui.serveB.classList.remove("show","left","right");
+    const el = (st.serveTeam===0) ? ui.serveA : ui.serveB;
+    el.classList.add("show");
+    el.classList.add(st.serveSide===0 ? "left" : "right");
+  }
 
+  function renderLock(){
+    ui.lockBtn.classList.toggle("lockOn", st.locked);
+    ui.lockIco.textContent = st.locked ? "🔒" : "🔓";
+  }
+
+  function render(){
+    renderTable();
+    renderServe();
+    renderLock();
+  }
+
+  // Hold-to-confirm Undo/Reset
+  function holdToConfirm({buttonEl, barEl, holdMs, onConfirm, okHint}){
+    let holdTimer=null, holdStart=0, raf=null;
     function resetUI(){
       barEl.style.width="0%";
       barEl.style.transition="width 0s";
@@ -389,92 +503,78 @@
       holdTimer=null;
       holdStart=0;
     }
-
     function tick(){
       const elapsed = Date.now() - holdStart;
       const pct = Math.max(0, Math.min(100, (elapsed/holdMs)*100));
       barEl.style.width = pct.toFixed(1) + "%";
       if (pct < 100) raf = requestAnimationFrame(tick);
     }
-
     function start(){
-      if (st.locked) return;
+      if (st.locked){ showHint("🔒"); return; }
       resetUI();
-      setHint(hintText);
+      showHint("…");
       holdStart = Date.now();
       raf = requestAnimationFrame(tick);
       holdTimer = setTimeout(() => {
         onConfirm();
-        setHint(doneText);
         barEl.style.transition="width .12s";
         barEl.style.width="100%";
-        setTimeout(() => { setHint(""); resetUI(); render(); }, 520);
+        showHint(okHint);
+        setTimeout(()=>{ resetUI(); render(); }, 420);
       }, holdMs);
     }
-
     function cancel(){
       if (!holdStart) return;
-      setHint("");
       resetUI();
+      ui.hint.classList.remove("show");
     }
-
-    buttonEl.addEventListener("pointerdown", (e)=>{ e.preventDefault(); start(); });
+    buttonEl.addEventListener("pointerdown",(e)=>{ e.preventDefault(); start(); });
     buttonEl.addEventListener("pointerup", cancel);
     buttonEl.addEventListener("pointercancel", cancel);
     buttonEl.addEventListener("pointerleave", cancel);
-
-    buttonEl.addEventListener("click", (e)=>{
-      e.preventDefault();
-      if (!st.locked) setHint(hintText);
-      setTimeout(()=>setHint(""), 700);
-    });
+    buttonEl.addEventListener("click",(e)=>e.preventDefault());
   }
 
-  // Wire buttons
-  ui.pA.addEventListener("click", ()=>{ point(0); render(); });
-  ui.pB.addEventListener("click", ()=>{ point(1); render(); });
+  // Taps
+  ui.zoneA.addEventListener("click", ()=> point(0));
+  ui.zoneB.addEventListener("click", ()=> point(1));
 
-  ui.lock.addEventListener("click", ()=>{
-    snapshot(); // allow undo lock change
+  // Lock
+  ui.lockBtn.addEventListener("click",(e)=>{
+    e.preventDefault();
+    snapshot();
     st.locked = !st.locked;
+    showHint(st.locked ? "🔒" : "🔓");
     render();
   });
 
+  // Undo / Reset
   holdToConfirm({
-    buttonEl: ui.undo,
+    buttonEl: ui.undoBtn,
     barEl: ui.undoBar,
     holdMs: 700,
-    onConfirm: ()=>{ const ok = undo(); setHint(ok ? "✅ Undone" : "—"); },
-    hintText: "Hold Undo (0.7s)…",
-    doneText: "✅ Undone"
+    onConfirm: ()=>{ const ok = undo(); showHint(ok ? "↶" : "—"); },
+    okHint:"↶"
   });
-
   holdToConfirm({
-    buttonEl: ui.reset,
+    buttonEl: ui.resetBtn,
     barEl: ui.resetBar,
     holdMs: 1200,
     onConfirm: ()=>{ resetAll(); },
-    hintText: "Hold Reset (1.2s)…",
-    doneText: "✅ Reset"
+    okHint:"⟲"
   });
 
-  ui.toggleNoAd.addEventListener("click", ()=>{
-    if (st.locked) return;
+  // Manual serve correction: tap the ball
+  function cycleServeManual(){
+    if (st.locked){ showHint("🔒"); return; }
     snapshot();
-    rules.noAd = !rules.noAd;
+    st.serveSide = 1 - st.serveSide;
+    if (st.serveSide === 0) st.serveTeam = 1 - st.serveTeam;
     render();
-  });
+  }
+  ui.serveA.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
+  ui.serveB.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
 
-  ui.toggleSets.addEventListener("click", ()=>{
-    if (st.locked) return;
-    snapshot();
-    rules.setsToWin = (rules.setsToWin === 6) ? 3 : 6;
-    // if match already beyond new threshold, mark finished
-    if (st.sets[0] >= rules.setsToWin || st.sets[1] >= rules.setsToWin) st.finished = true;
-    render();
-  });
-
-  // Initial
   render();
 })();
 </script>
