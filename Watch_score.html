@@ -1,589 +1,389 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Padel Watch</title>
-  <style>
-    :root{
-      --bg:#050509;
-      --line:rgba(255,255,255,.10);
-      --txt:rgba(255,255,255,.92);
-      --shadow: 0 18px 60px rgba(0,0,0,.65);
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Padel Watch</title>
 
-      /* ✅ Galaxy Watch 44mm: safe margin for round screen */
-      --round-safe: 12px;
-    }
-    *{ box-sizing:border-box; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-    html,body{ height:100%; margin:0; background: radial-gradient(120% 100% at 50% 0%, #0b0b18 0%, var(--bg) 55%, #000 100%); color:var(--txt); }
-    body{ display:flex; align-items:center; justify-content:center; overflow:hidden; }
+<style>
+:root{
+  --safe:14px;
+  --a:#00f2ff;
+  --b:#ff4fd8;
+}
 
-    /* ✅ Round-screen friendly safe padding */
-    .wrap{
-      width:100%;
-      height:100%;
-      padding:
-        calc(8px + env(safe-area-inset-top) + var(--round-safe))
-        calc(8px + env(safe-area-inset-right) + var(--round-safe))
-        calc(8px + env(safe-area-inset-bottom) + var(--round-safe))
-        calc(8px + env(safe-area-inset-left) + var(--round-safe));
-      display:grid;
-      grid-template-rows: auto 1fr auto;
-      gap:10px;
-    }
+*{box-sizing:border-box;font-family:system-ui,Arial;}
 
-    /* TOP: TEAM | S1 | S2 | S3 | PTS */
-    .mini{
-      border:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border-radius:16px;
-      box-shadow: var(--shadow);
-      padding:8px;
-      display:grid;
-      grid-template-columns: 1.25fr .9fr .9fr .9fr .95fr;
-      grid-template-rows: repeat(2, 1fr);
-      gap:6px;
-    }
-    .cell{
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      background: rgba(0,0,0,.25);
-      display:grid;
-      place-items:center;
-      font-weight:1050;
-      font-size: 15px;
-      letter-spacing:.2px;
-      color: rgba(255,255,255,.86);
-      min-height: 26px;
-      overflow:hidden;
-    }
-    .dim{ color: rgba(255,255,255,.30); }
+html,body{
+  margin:0;
+  height:100%;
+  background:radial-gradient(circle at top,#1a1f3c,#02020a);
+  color:white;
+}
 
-    .teamCell{
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      gap:8px;
-      padding:0 10px;
-      font-weight:1150;
-      letter-spacing:.3px;
-      font-size:13px;
-      color: rgba(255,255,255,.85);
-    }
-    .badge{
-      width:16px; height:16px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.25);
-      flex:0 0 auto;
-      box-shadow: 0 10px 22px rgba(0,0,0,.45);
-    }
-    .badge.a{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(0,240,255,.85) 55%, rgba(29,124,255,.75)); }
-    .badge.b{ background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(181,107,255,.85) 55%, rgba(255,77,184,.75)); }
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
 
-    /* MID */
-    .stage{
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      border-radius:22px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      position:relative;
-    }
-    .divider{
-      position:absolute; top:0; bottom:0; left:50%;
-      width:1px;
-      background: rgba(255,255,255,.10);
-      pointer-events:none;
-    }
+/* Safe round padding */
+.app{
+  width:100%;
+  height:100%;
+  padding:calc(10px + var(--safe));
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  gap:8px;
+}
 
-    .zone{
-      position:relative;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      user-select:none;
-      touch-action: manipulation;
-    }
-    .zone::before{
-      content:"";
-      position:absolute; inset:-50px;
-      background: radial-gradient(80% 70% at 50% 35%, rgba(255,255,255,.08), transparent 55%);
-      pointer-events:none;
-    }
-    .zoneA{ background: linear-gradient(135deg, rgba(0,240,255,.16), rgba(29,124,255,.08)); }
-    .zoneB{ background: linear-gradient(225deg, rgba(181,107,255,.16), rgba(255,77,184,.08)); }
+/* Top Score */
+.top{
+  background:rgba(0,0,0,.45);
+  border-radius:18px;
+  padding:6px;
+  display:grid;
+  grid-template-columns:1.2fr repeat(3,1fr) 1fr;
+  grid-template-rows:repeat(2,1fr);
+  gap:4px;
+  border:1px solid rgba(255,255,255,.15);
+}
 
-    /* ✅ Smaller center labels */
-    .label{
-      font-weight:1200;
-      font-size: clamp(16px, 5.6vw, 24px);
-      letter-spacing:1.1px;
-      opacity:.92;
-      text-shadow: 0 14px 50px rgba(0,0,0,.65);
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      backdrop-filter: blur(6px);
-    }
+.cell{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:13px;
+  background:rgba(255,255,255,.08);
+  border-radius:10px;
+}
 
-    /* Serve ball */
-    .serve{
-      position:absolute;
-      top:8px;
-      width:20px; height:20px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.35);
-      background:
-        radial-gradient(circle at 35% 35%, rgba(255,255,255,.95), rgba(255,255,255,.45) 45%, rgba(0,0,0,.20) 70%),
-        radial-gradient(circle at 70% 70%, rgba(255,210,80,.95), rgba(255,210,80,.15) 60%, transparent 70%);
-      box-shadow: 0 10px 26px rgba(0,0,0,.55);
-      display:none;
-      user-select:none;
-      touch-action: manipulation;
-      opacity:.95;
-    }
-    .serve.show{ display:block; }
-    .serve.left{ left:8px; }
-    .serve.right{ right:8px; }
+.teamA{color:var(--a);}
+.teamB{color:var(--b);}
 
-    /* Bottom buttons */
-    .bottom{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-      align-items:center;
-    }
-    .btn{
-      position:relative;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.03);
-      border-radius:18px;
-      padding:10px 8px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      user-select:none;
-      touch-action: manipulation;
-      box-shadow: 0 10px 28px rgba(0,0,0,.55);
-      overflow:hidden;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .ico{ font-size:18px; line-height:1; opacity:.92; filter: drop-shadow(0 8px 20px rgba(0,0,0,.55)); }
-    .lockOn{ border-color: rgba(255,77,77,.35); background: rgba(255,77,77,.10); }
 
-    .holdBar{
-      position:absolute; inset:0;
-      width:0%;
-      background: rgba(54,255,139,.12);
-      border-right: 2px solid rgba(54,255,139,.45);
-      pointer-events:none;
-      transition: width 0s;
-    }
-    .holdDanger{
-      background: rgba(255,77,77,.10);
-      border-right: 2px solid rgba(255,77,77,.45);
-    }
+/* Main round zone */
+.main{
+  position:relative;
+  background:radial-gradient(circle,#0b0f2b,#000);
+  border-radius:50%;
+  overflow:hidden;
+  box-shadow:0 0 30px rgba(0,0,0,.8);
+  border:1px solid rgba(255,255,255,.15);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
 
-    .hint{
-      position:absolute;
-      left:50%; transform: translateX(-50%);
-      bottom: 58px;
-      font-weight:900;
-      font-size:12px;
-      color: rgba(255,255,255,.55);
-      padding:6px 10px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
-      border-radius:999px;
-      backdrop-filter: blur(6px);
-      min-width: 86px;
-      text-align:center;
-      opacity:0;
-      transition: opacity .12s;
-      pointer-events:none;
-    }
-    .hint.show{ opacity:1; }
-  </style>
+/* Left / Right */
+.zone{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:1px;
+  user-select:none;
+}
+
+.zoneA{
+  background:radial-gradient(circle at left,var(--a),transparent 70%);
+}
+
+.zoneB{
+  background:radial-gradient(circle at right,var(--b),transparent 70%);
+}
+
+.centerLine{
+  position:absolute;
+  top:0;bottom:0;left:50%;
+  width:2px;
+  background:rgba(255,255,255,.2);
+}
+
+/* Serve */
+.ball{
+  position:absolute;
+  top:8px;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff,#ffcc55);
+  display:none;
+  box-shadow:0 0 10px gold;
+}
+
+.left{left:8px;}
+.right{right:8px;}
+.show{display:block;}
+
+
+/* Bottom bar */
+.bottom{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
+}
+
+.btn{
+  background:linear-gradient(145deg,#111,#000);
+  border-radius:999px;
+  height:42px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:18px;
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 6px 14px rgba(0,0,0,.8);
+}
+
+.btn:active{transform:scale(.95);}
+
+.lockOn{background:#400;}
+
+/* Hint */
+.hint{
+  position:absolute;
+  bottom:60px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.7);
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  opacity:0;
+}
+
+.showHint{opacity:1;}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
 
-    <div class="mini">
-      <div class="cell teamCell"><span class="badge a"></span>TEAM A</div>
-      <div class="cell" id="aS1">0</div>
-      <div class="cell dim" id="aS2">0</div>
-      <div class="cell dim" id="aS3">0</div>
-      <div class="cell" id="aPts">0</div>
+<div class="app">
 
-      <div class="cell teamCell"><span class="badge b"></span>TEAM B</div>
-      <div class="cell" id="bS1">0</div>
-      <div class="cell dim" id="bS2">0</div>
-      <div class="cell dim" id="bS3">0</div>
-      <div class="cell" id="bPts">0</div>
-    </div>
+<!-- TOP -->
+<div class="top">
+  <div class="cell teamA">TEAM A</div>
+  <div class="cell" id="a1">0</div>
+  <div class="cell" id="a2">0</div>
+  <div class="cell" id="a3">0</div>
+  <div class="cell" id="ap">0</div>
 
-    <div class="stage">
-      <div class="zone zoneA" id="zoneA">
-        <div class="serve" id="serveA"></div>
-        <div class="label">TEAM A</div>
-      </div>
-      <div class="divider"></div>
-      <div class="zone zoneB" id="zoneB">
-        <div class="serve" id="serveB"></div>
-        <div class="label">TEAM B</div>
-      </div>
-      <div class="hint" id="hint">🔒</div>
-    </div>
+  <div class="cell teamB">TEAM B</div>
+  <div class="cell" id="b1">0</div>
+  <div class="cell" id="b2">0</div>
+  <div class="cell" id="b3">0</div>
+  <div class="cell" id="bp">0</div>
+</div>
 
-    <div class="bottom">
-      <div class="btn" id="lockBtn"><div class="ico" id="lockIco">🔒</div></div>
-      <div class="btn" id="undoBtn">
-        <div class="holdBar" id="undoBar"></div>
-        <div class="ico">↶</div>
-      </div>
-      <div class="btn" id="resetBtn">
-        <div class="holdBar holdDanger" id="resetBar"></div>
-        <div class="ico">⟲</div>
-      </div>
-    </div>
+<!-- MAIN -->
+<div class="main">
 
-  </div>
+  <div class="zone zoneA" id="za">TEAM A</div>
+  <div class="zone zoneB" id="zb">TEAM B</div>
+
+  <div class="centerLine"></div>
+
+  <div class="ball" id="ballA"></div>
+  <div class="ball" id="ballB"></div>
+
+  <div class="hint" id="hint">🔒</div>
+
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom">
+
+  <div class="btn" id="lock">🔒</div>
+  <div class="btn" id="undo">↩️</div>
+  <div class="btn" id="reset">⟲</div>
+
+</div>
+
+</div>
 
 <script>
-(() => {
-  // Best of 3: first to 2 sets wins. No-Ad. TB at 6–6.
-  const rules = { noAd:true, tieBreakAt66:true, setsToWin:2, maxSets:3 };
+(()=>{
+/* Best of 3 */
+const winSets=2;
+const maxSets=3;
 
-  const st = {
-    locked:false,
-    finished:false,
+let st={
+  locked:false,
+  finished:false,
 
-    points:[0,0],
-    setGames: Array.from({length: rules.maxSets}, () => [0,0]),
-    currentSet:0,
+  pts:[0,0],
+  games:[[0,0],[0,0],[0,0]],
+  set:0,
 
-    tieBreak:false,
-    tb:[0,0],
-    tbPointsTotal:0,
+  tb:false,
+  tbp:[0,0],
 
-    setsWon:[0,0],
-    serveTeam:0,
-    serveSide:0,
+  won:[0,0],
 
-    history:[]
-  };
+  serve:0,
+  side:0,
 
-  const $ = (id) => document.getElementById(id);
-  const ui = {
-    aS:[ $("aS1"),$("aS2"),$("aS3") ],
-    bS:[ $("bS1"),$("bS2"),$("bS3") ],
-    aPts:$("aPts"), bPts:$("bPts"),
-    zoneA:$("zoneA"), zoneB:$("zoneB"),
-    serveA:$("serveA"), serveB:$("serveB"),
-    lockBtn:$("lockBtn"), lockIco:$("lockIco"),
-    undoBtn:$("undoBtn"), undoBar:$("undoBar"),
-    resetBtn:$("resetBtn"), resetBar:$("resetBar"),
-    hint:$("hint"),
-  };
+  hist:[]
+};
 
-  function showHint(txt){
-    ui.hint.textContent = txt;
-    ui.hint.classList.add("show");
-    clearTimeout(showHint._t);
-    showHint._t = setTimeout(()=> ui.hint.classList.remove("show"), 520);
+const $=id=>document.getElementById(id);
+
+const ui={
+ a:[$("a1"),$("a2"),$("a3")],
+ b:[$("b1"),$("b2"),$("b3")],
+ ap:$("ap"),bp:$("bp"),
+
+ za:$("za"),zb:$("zb"),
+
+ ba:$("ballA"),bb:$("ballB"),
+
+ lock:$("lock"),undo:$("undo"),reset:$("reset"),
+
+ hint:$("hint")
+};
+
+function snap(){
+ st.hist.push(JSON.parse(JSON.stringify(st)));
+ if(st.hist.length>60)st.hist.shift();
+}
+
+function undo(){
+ if(!st.hist.length)return;
+ st=st.hist.pop();
+ render();
+}
+
+function reset(){
+ snap();
+ st={
+  locked:false,finished:false,
+  pts:[0,0],
+  games:[[0,0],[0,0],[0,0]],
+  set:0,tb:false,tbp:[0,0],
+  won:[0,0],
+  serve:0,side:0,
+  hist:st.hist
+ };
+ render();
+}
+
+function score(p){
+ return ["0","15","30","40"][Math.min(p,3)];
+}
+
+function winGame(t){
+ st.games[st.set][t]++;
+ st.pts=[0,0];
+
+ st.serve^=1;
+ st.side^=1;
+
+ const g=st.games[st.set];
+ if(g[0]==6&&g[1]==6){
+  st.tb=true;st.tbp=[0,0];
+ }
+
+ if(!st.tb){
+  if((Math.max(...g)>=6)&&Math.abs(g[0]-g[1])>=2){
+   endSet(g[0]>g[1]?0:1);
   }
+ }
+}
 
-  // Snapshot WITHOUT history (prevents freeze)
-  function makeSnapshot(){
-    return {
-      locked: st.locked,
-      finished: st.finished,
-      points: [st.points[0], st.points[1]],
-      setGames: st.setGames.map(s => [s[0], s[1]]),
-      currentSet: st.currentSet,
-      tieBreak: st.tieBreak,
-      tb: [st.tb[0], st.tb[1]],
-      tbPointsTotal: st.tbPointsTotal,
-      setsWon: [st.setsWon[0], st.setsWon[1]],
-      serveTeam: st.serveTeam,
-      serveSide: st.serveSide
-    };
+function endSet(t){
+ st.won[t]++;
+ st.pts=[0,0];
+ st.tb=false;st.tbp=[0,0];
+
+ if(st.won[t]>=winSets){
+  st.finished=true;
+  return;
+ }
+
+ if(st.set<maxSets-1)st.set++;
+}
+
+function point(t){
+ if(st.locked||st.finished)return;
+
+ snap();
+
+ if(st.tb){
+  st.tbp[t]++;
+
+  if(Math.max(...st.tbp)>=7 &&
+     Math.abs(st.tbp[0]-st.tbp[1])>=2){
+
+   st.games[st.set]=[
+    st.tbp[0]>st.tbp[1]?7:6,
+    st.tbp[1]>st.tbp[0]?7:6
+   ];
+   endSet(t);
   }
-  function applySnapshot(snap){
-    st.locked = snap.locked;
-    st.finished = snap.finished;
-    st.points = [snap.points[0], snap.points[1]];
-    st.setGames = snap.setGames.map(s => [s[0], s[1]]);
-    st.currentSet = snap.currentSet;
-    st.tieBreak = snap.tieBreak;
-    st.tb = [snap.tb[0], snap.tb[1]];
-    st.tbPointsTotal = snap.tbPointsTotal;
-    st.setsWon = [snap.setsWon[0], snap.setsWon[1]];
-    st.serveTeam = snap.serveTeam;
-    st.serveSide = snap.serveSide;
-  }
-  function snapshot(){
-    st.history.push(makeSnapshot());
-    if (st.history.length > 120) st.history.shift();
-  }
-  function undo(){
-    if (st.locked) return false;
-    const prev = st.history.pop();
-    if (!prev) return false;
-    applySnapshot(prev);
-    return true;
-  }
-  function resetAll(){
-    if (st.locked) return false;
-    snapshot();
-    st.locked=false; st.finished=false;
-    st.points=[0,0];
-    st.setGames = Array.from({length: rules.maxSets}, () => [0,0]);
-    st.currentSet=0;
-    st.tieBreak=false; st.tb=[0,0]; st.tbPointsTotal=0;
-    st.setsWon=[0,0];
-    st.serveTeam=0; st.serveSide=0;
-    return true;
-  }
+  render();return;
+ }
 
-  function scoreLabel(p){
-    if (p===0) return "0";
-    if (p===1) return "15";
-    if (p===2) return "30";
-    return "40";
-  }
-  function gamesNow(){ return st.setGames[st.currentSet]; }
+ st.pts[t]++;
 
-  function rotateServeAfterGame(){
-    st.serveTeam = 1 - st.serveTeam;
-    st.serveSide = 1 - st.serveSide;
-  }
+ if(st.pts[t]>=4){
+  winGame(t);
+ }
 
-  function maybeStartTB(){
-    const g = gamesNow();
-    if (rules.tieBreakAt66 && g[0]===6 && g[1]===6){
-      st.tieBreak = true;
-      st.tb=[0,0];
-      st.tbPointsTotal=0;
-    }
-  }
+ render();
+}
 
-  function endSet(winner){
-    st.setsWon[winner]++;
+function render(){
 
-    st.points=[0,0];
-    st.tieBreak=false;
-    st.tb=[0,0];
-    st.tbPointsTotal=0;
+ for(let i=0;i<3;i++){
+  ui.a[i].textContent=st.games[i][0];
+  ui.b[i].textContent=st.games[i][1];
+ }
 
-    if (st.setsWon[0] >= rules.setsToWin || st.setsWon[1] >= rules.setsToWin){
-      st.finished = true;
-      return;
-    }
-    if (st.currentSet < rules.maxSets - 1){
-      st.currentSet++;
-    } else {
-      st.finished = true;
-    }
-  }
+ if(st.tb){
+  ui.ap.textContent=st.tbp[0];
+  ui.bp.textContent=st.tbp[1];
+ }else{
+  ui.ap.textContent=score(st.pts[0]);
+  ui.bp.textContent=score(st.pts[1]);
+ }
 
-  function checkSetWinNormal(){
-    const g = gamesNow();
-    const a=g[0], b=g[1];
-    const lead=Math.abs(a-b);
-    const mx=Math.max(a,b);
+ ui.ba.className="ball";
+ ui.bb.className="ball";
 
-    if ((mx===6 && lead>=2) || (mx===7 && lead>=2)){
-      endSet(a>b ? 0 : 1);
-      return true;
-    }
-    return false;
-  }
+ let el=st.serve?ui.bb:ui.ba;
+ el.classList.add("show");
+ el.classList.add(st.side?"right":"left");
 
-  function winGame(team){
-    const g = gamesNow();
-    g[team]++;
+ ui.lock.textContent=st.locked?"🔒":"🔓";
+ ui.lock.classList.toggle("lockOn",st.locked);
+}
 
-    rotateServeAfterGame();
-    maybeStartTB();
+function hint(t){
+ ui.hint.textContent=t;
+ ui.hint.classList.add("showHint");
+ setTimeout(()=>ui.hint.classList.remove("showHint"),500);
+}
 
-    if (!st.tieBreak){
-      checkSetWinNormal();
-    }
-    st.points=[0,0];
-  }
+/* Events */
 
-  // TB service: 1 then 2; side flips each point
-  function tbRotateServeAfterPoint(){
-    st.tbPointsTotal++;
-    if (st.tbPointsTotal === 1 || (st.tbPointsTotal > 1 && (st.tbPointsTotal % 2 === 1))){
-      st.serveTeam = 1 - st.serveTeam;
-    }
-    st.serveSide = 1 - st.serveSide;
-  }
+ui.za.onclick=()=>point(0);
+ui.zb.onclick=()=>point(1);
 
-  function tbPoint(team){
-    st.tb[team]++;
-    tbRotateServeAfterPoint();
+ui.lock.onclick=()=>{
+ snap();
+ st.lock=!st.locked;
+ hint(st.locked?"🔒":"🔓");
+ render();
+};
 
-    const a=st.tb[0], b=st.tb[1];
-    const mx=Math.max(a,b), lead=Math.abs(a-b);
-    if (mx>=7 && lead>=2){
-      const g = gamesNow();
-      g[team]=7; g[1-team]=6;
-      endSet(team);
-    }
-  }
+ui.undo.onclick=()=>undo();
+ui.reset.onclick=()=>reset();
 
-  function point(team){
-    if (st.locked){ showHint("🔒"); return; }
-    if (st.finished){ showHint("✓"); return; }
-
-    snapshot();
-
-    if (st.tieBreak){
-      tbPoint(team);
-      render();
-      return;
-    }
-
-    st.points[team]++;
-    const a=st.points[0], b=st.points[1];
-
-    if (rules.noAd){
-      if (a>=4 || b>=4) winGame(a>b ? 0 : 1);
-    } else {
-      const lead=Math.abs(a-b), mx=Math.max(a,b);
-      if (mx>=4 && lead>=2) winGame(a>b?0:1);
-    }
-
-    render();
-  }
-
-  function renderTable(){
-    for (let i=0;i<rules.maxSets;i++){
-      ui.aS[i].textContent = st.setGames[i][0];
-      ui.bS[i].textContent = st.setGames[i][1];
-      ui.aS[i].classList.toggle("dim", st.currentSet < i);
-      ui.bS[i].classList.toggle("dim", st.currentSet < i);
-    }
-
-    if (st.tieBreak){
-      ui.aPts.textContent = st.tb[0];
-      ui.bPts.textContent = st.tb[1];
-    } else {
-      ui.aPts.textContent = scoreLabel(Math.min(st.points[0],3));
-      ui.bPts.textContent = scoreLabel(Math.min(st.points[1],3));
-    }
-  }
-
-  function renderServe(){
-    ui.serveA.classList.remove("show","left","right");
-    ui.serveB.classList.remove("show","left","right");
-    const el = (st.serveTeam===0) ? ui.serveA : ui.serveB;
-    el.classList.add("show");
-    el.classList.add(st.serveSide===0 ? "left" : "right");
-  }
-
-  function renderLock(){
-    ui.lockBtn.classList.toggle("lockOn", st.locked);
-    ui.lockIco.textContent = st.locked ? "🔒" : "🔓";
-  }
-
-  function render(){
-    renderTable();
-    renderServe();
-    renderLock();
-  }
-
-  // Hold-to-confirm Undo/Reset
-  function holdToConfirm({buttonEl, barEl, holdMs, onConfirm, okHint}){
-    let holdTimer=null, holdStart=0, raf=null;
-    function resetUI(){
-      barEl.style.width="0%";
-      barEl.style.transition="width 0s";
-      if (raf) cancelAnimationFrame(raf);
-      raf=null;
-      if (holdTimer) clearTimeout(holdTimer);
-      holdTimer=null;
-      holdStart=0;
-    }
-    function tick(){
-      const elapsed = Date.now() - holdStart;
-      const pct = Math.max(0, Math.min(100, (elapsed/holdMs)*100));
-      barEl.style.width = pct.toFixed(1) + "%";
-      if (pct < 100) raf = requestAnimationFrame(tick);
-    }
-    function start(){
-      if (st.locked){ showHint("🔒"); return; }
-      resetUI();
-      showHint("…");
-      holdStart = Date.now();
-      raf = requestAnimationFrame(tick);
-      holdTimer = setTimeout(() => {
-        onConfirm();
-        barEl.style.transition="width .12s";
-        barEl.style.width="100%";
-        showHint(okHint);
-        setTimeout(()=>{ resetUI(); render(); }, 420);
-      }, holdMs);
-    }
-    function cancel(){
-      if (!holdStart) return;
-      resetUI();
-      ui.hint.classList.remove("show");
-    }
-    buttonEl.addEventListener("pointerdown",(e)=>{ e.preventDefault(); start(); });
-    buttonEl.addEventListener("pointerup", cancel);
-    buttonEl.addEventListener("pointercancel", cancel);
-    buttonEl.addEventListener("pointerleave", cancel);
-    buttonEl.addEventListener("click",(e)=>e.preventDefault());
-  }
-
-  // Taps
-  ui.zoneA.addEventListener("click", ()=> point(0));
-  ui.zoneB.addEventListener("click", ()=> point(1));
-
-  // Lock
-  ui.lockBtn.addEventListener("click",(e)=>{
-    e.preventDefault();
-    snapshot();
-    st.locked = !st.locked;
-    showHint(st.locked ? "🔒" : "🔓");
-    render();
-  });
-
-  // Undo / Reset
-  holdToConfirm({
-    buttonEl: ui.undoBtn,
-    barEl: ui.undoBar,
-    holdMs: 700,
-    onConfirm: ()=>{ const ok = undo(); showHint(ok ? "↶" : "—"); },
-    okHint:"↶"
-  });
-  holdToConfirm({
-    buttonEl: ui.resetBtn,
-    barEl: ui.resetBar,
-    holdMs: 1200,
-    onConfirm: ()=>{ resetAll(); },
-    okHint:"⟲"
-  });
-
-  // Manual serve correction: tap the ball
-  function cycleServeManual(){
-    if (st.locked){ showHint("🔒"); return; }
-    snapshot();
-    st.serveSide = 1 - st.serveSide;
-    if (st.serveSide === 0) st.serveTeam = 1 - st.serveTeam;
-    render();
-  }
-  ui.serveA.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
-  ui.serveB.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
-
-  render();
+render();
 })();
 </script>
+
 </body>
 </html>
