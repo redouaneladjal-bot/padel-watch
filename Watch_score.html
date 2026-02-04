@@ -2,388 +2,532 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Padel Watch</title>
 
 <style>
-:root{
-  --safe:14px;
-  --a:#00f2ff;
-  --b:#ff4fd8;
-}
+  :root{
+    --a:#00f2ff;
+    --b:#ff4fd8;
 
-*{box-sizing:border-box;font-family:system-ui,Arial;}
+    --bg1:#1a1f3c;
+    --bg2:#02020a;
 
-html,body{
-  margin:0;
-  height:100%;
-  background:radial-gradient(circle at top,#1a1f3c,#02020a);
-  color:white;
-}
+    /* auto set by JS */
+    --pad-top:10px;
+    --pad-right:10px;
+    --pad-bottom:10px;
+    --pad-left:10px;
+  }
 
-body{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+  html,body{height:100%;margin:0;color:#fff;background:radial-gradient(circle at top,var(--bg1),var(--bg2));}
+  body{display:flex;align-items:center;justify-content:center;overflow:hidden;}
 
-/* Safe round padding */
-.app{
-  width:100%;
-  height:100%;
-  padding:calc(10px + var(--safe));
-  display:grid;
-  grid-template-rows:auto 1fr auto;
-  gap:8px;
-}
+  .app{
+    width:100%;
+    height:100%;
+    padding: var(--pad-top) var(--pad-right) var(--pad-bottom) var(--pad-left);
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    gap:8px;
+  }
 
-/* Top Score */
-.top{
-  background:rgba(0,0,0,.45);
-  border-radius:18px;
-  padding:6px;
-  display:grid;
-  grid-template-columns:1.2fr repeat(3,1fr) 1fr;
-  grid-template-rows:repeat(2,1fr);
-  gap:4px;
-  border:1px solid rgba(255,255,255,.15);
-}
+  /* TOP: PTS | S1 | S2 | S3  (2 rows: A/B) */
+  .top{
+    background:rgba(0,0,0,.46);
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:18px;
+    padding:6px;
+    display:grid;
+    grid-template-columns: 1.15fr 1fr 1fr 1fr;
+    grid-template-rows: repeat(2, 1fr);
+    gap:5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55);
+    backdrop-filter: blur(6px);
+  }
 
-.cell{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  font-size:13px;
-  background:rgba(255,255,255,.08);
-  border-radius:10px;
-}
+  .cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-size:13px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    min-height: 24px;
+    letter-spacing:.2px;
+    overflow:hidden;
+  }
 
-.teamA{color:var(--a);}
-.teamB{color:var(--b);}
+  .ptsCell{
+    justify-content:space-between;
+    padding:0 10px;
+  }
+  .badge{
+    width:18px;height:18px;border-radius:999px;
+    display:grid;place-items:center;
+    font-size:12px;font-weight:1000;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.25);
+  }
+  .badge.a{ box-shadow:0 0 14px rgba(0,242,255,.45); color:var(--a); }
+  .badge.b{ box-shadow:0 0 14px rgba(255,79,216,.45); color:var(--b); }
 
+  .ptsText{ font-size:14px; font-weight:1000; }
+  .rowA{ background: linear-gradient(90deg, rgba(0,242,255,.14), rgba(255,255,255,.06)); }
+  .rowB{ background: linear-gradient(270deg, rgba(255,79,216,.14), rgba(255,255,255,.06)); }
 
-/* Main round zone */
-.main{
-  position:relative;
-  background:radial-gradient(circle,#0b0f2b,#000);
-  border-radius:50%;
-  overflow:hidden;
-  box-shadow:0 0 30px rgba(0,0,0,.8);
-  border:1px solid rgba(255,255,255,.15);
-  display:grid;
-  grid-template-columns:1fr 1fr;
-}
+  /* MAIN */
+  .main{
+    position:relative;
+    background:radial-gradient(circle,#0b0f2b,#000);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow: 0 18px 60px rgba(0,0,0,.65);
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .shape-round .main{ border-radius:50%; }
+  .shape-square .main{ border-radius:22px; }
 
-/* Left / Right */
-.zone{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:22px;
-  font-weight:900;
-  letter-spacing:1px;
-  user-select:none;
-}
+  .zone{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    user-select:none;
+    touch-action: manipulation;
+    font-weight:1100;
+    letter-spacing:1px;
+    text-shadow:0 14px 40px rgba(0,0,0,.65);
+  }
+  .shape-round .zone{ font-size: 20px; }
+  .shape-square .zone{ font-size: 26px; }
 
-.zoneA{
-  background:radial-gradient(circle at left,var(--a),transparent 70%);
-}
+  .zoneA{ background:radial-gradient(circle at left, rgba(0,242,255,.70), transparent 72%); }
+  .zoneB{ background:radial-gradient(circle at right, rgba(255,79,216,.70), transparent 72%); }
 
-.zoneB{
-  background:radial-gradient(circle at right,var(--b),transparent 70%);
-}
+  .centerLine{
+    position:absolute; top:0; bottom:0; left:50%;
+    width:2px;
+    background:rgba(255,255,255,.18);
+    pointer-events:none;
+  }
 
-.centerLine{
-  position:absolute;
-  top:0;bottom:0;left:50%;
-  width:2px;
-  background:rgba(255,255,255,.2);
-}
+  /* Serve ball */
+  .ball{
+    position:absolute;
+    top:10px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:radial-gradient(circle,#fff,#ffcc55);
+    box-shadow:0 0 10px rgba(255,204,85,.8);
+    display:none;
+    touch-action: manipulation;
+  }
+  .ball.show{display:block;}
+  .ball.left{left:10px;}
+  .ball.right{right:10px;}
 
-/* Serve */
-.ball{
-  position:absolute;
-  top:8px;
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:radial-gradient(circle,#fff,#ffcc55);
-  display:none;
-  box-shadow:0 0 10px gold;
-}
+  /* Bottom controls */
+  .bottom{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .btn{
+    height:44px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.16);
+    background: linear-gradient(145deg, rgba(255,255,255,.10), rgba(0,0,0,.35));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    box-shadow:0 10px 24px rgba(0,0,0,.55);
+    user-select:none;
+    touch-action: manipulation;
+  }
+  .btn:active{ transform: scale(.96); }
+  .lockOn{ background: linear-gradient(145deg, rgba(255,80,80,.20), rgba(0,0,0,.35)); border-color: rgba(255,80,80,.35); }
 
-.left{left:8px;}
-.right{right:8px;}
-.show{display:block;}
+  .hint{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:64px;
+    background:rgba(0,0,0,.72);
+    border:1px solid rgba(255,255,255,.14);
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    opacity:0;
+    transition: opacity .12s;
+    pointer-events:none;
+  }
+  .hint.show{opacity:1;}
 
+  /* round tweaks */
+  .shape-round .top{ padding:5px; }
+  .shape-round .cell{ font-size:12px; min-height:22px; border-radius:13px; }
+  .shape-round .btn{ height:42px; }
 
-/* Bottom bar */
-.bottom{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:8px;
-}
-
-.btn{
-  background:linear-gradient(145deg,#111,#000);
-  border-radius:999px;
-  height:42px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:18px;
-  border:1px solid rgba(255,255,255,.15);
-  box-shadow:0 6px 14px rgba(0,0,0,.8);
-}
-
-.btn:active{transform:scale(.95);}
-
-.lockOn{background:#400;}
-
-/* Hint */
-.hint{
-  position:absolute;
-  bottom:60px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,.7);
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:12px;
-  opacity:0;
-}
-
-.showHint{opacity:1;}
 </style>
 </head>
 
 <body>
+<div class="app" id="app">
 
-<div class="app">
+  <!-- TOP: PTS | S1 | S2 | S3 -->
+  <div class="top">
+    <div class="cell ptsCell rowA">
+      <span class="badge a">A</span>
+      <span class="ptsText" id="ap">0</span>
+    </div>
+    <div class="cell rowA" id="a1">0</div>
+    <div class="cell rowA" id="a2">0</div>
+    <div class="cell rowA" id="a3">0</div>
 
-<!-- TOP -->
-<div class="top">
-  <div class="cell teamA">TEAM A</div>
-  <div class="cell" id="a1">0</div>
-  <div class="cell" id="a2">0</div>
-  <div class="cell" id="a3">0</div>
-  <div class="cell" id="ap">0</div>
+    <div class="cell ptsCell rowB">
+      <span class="badge b">B</span>
+      <span class="ptsText" id="bp">0</span>
+    </div>
+    <div class="cell rowB" id="b1">0</div>
+    <div class="cell rowB" id="b2">0</div>
+    <div class="cell rowB" id="b3">0</div>
+  </div>
 
-  <div class="cell teamB">TEAM B</div>
-  <div class="cell" id="b1">0</div>
-  <div class="cell" id="b2">0</div>
-  <div class="cell" id="b3">0</div>
-  <div class="cell" id="bp">0</div>
-</div>
+  <!-- MAIN -->
+  <div class="main">
+    <div class="zone zoneA" id="za">TEAM A</div>
+    <div class="zone zoneB" id="zb">TEAM B</div>
+    <div class="centerLine"></div>
 
-<!-- MAIN -->
-<div class="main">
+    <div class="ball" id="ballA" title="Serve"></div>
+    <div class="ball" id="ballB" title="Serve"></div>
 
-  <div class="zone zoneA" id="za">TEAM A</div>
-  <div class="zone zoneB" id="zb">TEAM B</div>
+    <div class="hint" id="hint">🔒</div>
+  </div>
 
-  <div class="centerLine"></div>
-
-  <div class="ball" id="ballA"></div>
-  <div class="ball" id="ballB"></div>
-
-  <div class="hint" id="hint">🔒</div>
-
-</div>
-
-<!-- BOTTOM -->
-<div class="bottom">
-
-  <div class="btn" id="lock">🔒</div>
-  <div class="btn" id="undo">↩️</div>
-  <div class="btn" id="reset">⟲</div>
-
-</div>
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="btn" id="lock">🔒</div>
+    <div class="btn" id="undo">↶</div>
+    <div class="btn" id="reset">⟲</div>
+  </div>
 
 </div>
 
 <script>
-(()=>{
-/* Best of 3 */
-const winSets=2;
-const maxSets=3;
+(() => {
+  const app = document.getElementById("app");
 
-let st={
-  locked:false,
-  finished:false,
+  // --------- Round vs Square detection + safe padding ----------
+  function detectShape(){
+    const w = Math.min(window.innerWidth, window.innerHeight);
+    const ar = window.innerWidth / window.innerHeight;
+    const nearSquare = Math.abs(ar - 1) < 0.09;
+    const small = w <= 520;
+    const isRound = nearSquare && small;
 
-  pts:[0,0],
-  games:[[0,0],[0,0],[0,0]],
-  set:0,
+    app.classList.toggle("shape-round", isRound);
+    app.classList.toggle("shape-square", !isRound);
 
-  tb:false,
-  tbp:[0,0],
-
-  won:[0,0],
-
-  serve:0,
-  side:0,
-
-  hist:[]
-};
-
-const $=id=>document.getElementById(id);
-
-const ui={
- a:[$("a1"),$("a2"),$("a3")],
- b:[$("b1"),$("b2"),$("b3")],
- ap:$("ap"),bp:$("bp"),
-
- za:$("za"),zb:$("zb"),
-
- ba:$("ballA"),bb:$("ballB"),
-
- lock:$("lock"),undo:$("undo"),reset:$("reset"),
-
- hint:$("hint")
-};
-
-function snap(){
- st.hist.push(JSON.parse(JSON.stringify(st)));
- if(st.hist.length>60)st.hist.shift();
-}
-
-function undo(){
- if(!st.hist.length)return;
- st=st.hist.pop();
- render();
-}
-
-function reset(){
- snap();
- st={
-  locked:false,finished:false,
-  pts:[0,0],
-  games:[[0,0],[0,0],[0,0]],
-  set:0,tb:false,tbp:[0,0],
-  won:[0,0],
-  serve:0,side:0,
-  hist:st.hist
- };
- render();
-}
-
-function score(p){
- return ["0","15","30","40"][Math.min(p,3)];
-}
-
-function winGame(t){
- st.games[st.set][t]++;
- st.pts=[0,0];
-
- st.serve^=1;
- st.side^=1;
-
- const g=st.games[st.set];
- if(g[0]==6&&g[1]==6){
-  st.tb=true;st.tbp=[0,0];
- }
-
- if(!st.tb){
-  if((Math.max(...g)>=6)&&Math.abs(g[0]-g[1])>=2){
-   endSet(g[0]>g[1]?0:1);
+    // Strong safe padding for round
+    if (isRound){
+      // tuned for Galaxy Watch round faces
+      app.style.setProperty("--pad-top", "20%");
+      app.style.setProperty("--pad-right", "12%");
+      app.style.setProperty("--pad-bottom", "16%");
+      app.style.setProperty("--pad-left", "12%");
+    } else {
+      app.style.setProperty("--pad-top", "10px");
+      app.style.setProperty("--pad-right", "10px");
+      app.style.setProperty("--pad-bottom", "10px");
+      app.style.setProperty("--pad-left", "10px");
+    }
   }
- }
-}
+  detectShape();
+  window.addEventListener("resize", detectShape);
 
-function endSet(t){
- st.won[t]++;
- st.pts=[0,0];
- st.tb=false;st.tbp=[0,0];
+  // --------- UI refs ----------
+  const ui = {
+    a: [document.getElementById("a1"), document.getElementById("a2"), document.getElementById("a3")],
+    b: [document.getElementById("b1"), document.getElementById("b2"), document.getElementById("b3")],
+    ap: document.getElementById("ap"),
+    bp: document.getElementById("bp"),
+    za: document.getElementById("za"),
+    zb: document.getElementById("zb"),
+    ballA: document.getElementById("ballA"),
+    ballB: document.getElementById("ballB"),
+    lock: document.getElementById("lock"),
+    undo: document.getElementById("undo"),
+    reset: document.getElementById("reset"),
+    hint: document.getElementById("hint"),
+  };
 
- if(st.won[t]>=winSets){
-  st.finished=true;
-  return;
- }
-
- if(st.set<maxSets-1)st.set++;
-}
-
-function point(t){
- if(st.locked||st.finished)return;
-
- snap();
-
- if(st.tb){
-  st.tbp[t]++;
-
-  if(Math.max(...st.tbp)>=7 &&
-     Math.abs(st.tbp[0]-st.tbp[1])>=2){
-
-   st.games[st.set]=[
-    st.tbp[0]>st.tbp[1]?7:6,
-    st.tbp[1]>st.tbp[0]?7:6
-   ];
-   endSet(t);
+  function showHint(t){
+    ui.hint.textContent = t;
+    ui.hint.classList.add("show");
+    clearTimeout(showHint._t);
+    showHint._t = setTimeout(()=>ui.hint.classList.remove("show"), 520);
   }
-  render();return;
- }
 
- st.pts[t]++;
+  // --------- Scoring rules ----------
+  // Best of 3: first to 2 sets. No-Ad. TB at 6–6.
+  const rules = { setsToWin:2, maxSets:3, noAd:true, tbAt66:true };
 
- if(st.pts[t]>=4){
-  winGame(t);
- }
+  const st = {
+    locked:false,
+    finished:false,
 
- render();
-}
+    pts:[0,0], // raw points: 0.. (we display 0/15/30/40)
+    games: Array.from({length: rules.maxSets}, () => [0,0]),
+    set:0,
 
-function render(){
+    tb:false,
+    tbp:[0,0],
+    tbTotal:0,
 
- for(let i=0;i<3;i++){
-  ui.a[i].textContent=st.games[i][0];
-  ui.b[i].textContent=st.games[i][1];
- }
+    won:[0,0],
 
- if(st.tb){
-  ui.ap.textContent=st.tbp[0];
-  ui.bp.textContent=st.tbp[1];
- }else{
-  ui.ap.textContent=score(st.pts[0]);
-  ui.bp.textContent=score(st.pts[1]);
- }
+    serve:0, // 0=A, 1=B
+    side:0,  // 0=left, 1=right
 
- ui.ba.className="ball";
- ui.bb.className="ball";
+    hist:[]
+  };
 
- let el=st.serve?ui.bb:ui.ba;
- el.classList.add("show");
- el.classList.add(st.side?"right":"left");
+  // ✅ SAFE snapshot (excludes hist)
+  function makeSnap(){
+    return {
+      locked: st.locked,
+      finished: st.finished,
+      pts: [st.pts[0], st.pts[1]],
+      games: st.games.map(x => [x[0], x[1]]),
+      set: st.set,
+      tb: st.tb,
+      tbp: [st.tbp[0], st.tbp[1]],
+      tbTotal: st.tbTotal,
+      won: [st.won[0], st.won[1]],
+      serve: st.serve,
+      side: st.side
+    };
+  }
+  function applySnap(s){
+    st.locked = s.locked;
+    st.finished = s.finished;
+    st.pts = [s.pts[0], s.pts[1]];
+    st.games = s.games.map(x => [x[0], x[1]]);
+    st.set = s.set;
+    st.tb = s.tb;
+    st.tbp = [s.tbp[0], s.tbp[1]];
+    st.tbTotal = s.tbTotal;
+    st.won = [s.won[0], s.won[1]];
+    st.serve = s.serve;
+    st.side = s.side;
+  }
+  function snap(){
+    st.hist.push(makeSnap());
+    if (st.hist.length > 80) st.hist.shift();
+  }
 
- ui.lock.textContent=st.locked?"🔒":"🔓";
- ui.lock.classList.toggle("lockOn",st.locked);
-}
+  function scoreLabel(p){
+    return ["0","15","30","40"][Math.min(p,3)];
+  }
+  function g(){ return st.games[st.set]; }
 
-function hint(t){
- ui.hint.textContent=t;
- ui.hint.classList.add("showHint");
- setTimeout(()=>ui.hint.classList.remove("showHint"),500);
-}
+  function rotateServeAfterGame(){
+    st.serve ^= 1;
+    st.side ^= 1;
+  }
 
-/* Events */
+  function maybeStartTB(){
+    const gg = g();
+    if (rules.tbAt66 && gg[0] === 6 && gg[1] === 6){
+      st.tb = true;
+      st.tbp = [0,0];
+      st.tbTotal = 0;
+    }
+  }
 
-ui.za.onclick=()=>point(0);
-ui.zb.onclick=()=>point(1);
+  function endSet(w){
+    st.won[w]++;
 
-ui.lock.onclick=()=>{
- snap();
- st.lock=!st.locked;
- hint(st.locked?"🔒":"🔓");
- render();
-};
+    st.pts = [0,0];
+    st.tb = false;
+    st.tbp = [0,0];
+    st.tbTotal = 0;
 
-ui.undo.onclick=()=>undo();
-ui.reset.onclick=()=>reset();
+    if (st.won[0] >= rules.setsToWin || st.won[1] >= rules.setsToWin){
+      st.finished = true;
+      return;
+    }
 
-render();
+    if (st.set < rules.maxSets - 1) st.set++;
+    else st.finished = true;
+  }
+
+  function checkSetWinNormal(){
+    const gg = g();
+    const a = gg[0], b = gg[1];
+    const mx = Math.max(a,b);
+    const lead = Math.abs(a-b);
+
+    if ((mx === 6 && lead >= 2) || (mx === 7 && lead >= 2)){
+      endSet(a > b ? 0 : 1);
+      return true;
+    }
+    return false;
+  }
+
+  function winGame(w){
+    g()[w]++;
+
+    rotateServeAfterGame();
+    maybeStartTB();
+
+    if (!st.tb) checkSetWinNormal();
+    st.pts = [0,0];
+  }
+
+  // TB serve: 1 point then 2 points; side flips each point
+  function tbRotateAfterPoint(){
+    st.tbTotal++;
+    if (st.tbTotal === 1 || (st.tbTotal > 1 && (st.tbTotal % 2 === 1))){
+      st.serve ^= 1;
+    }
+    st.side ^= 1;
+  }
+
+  function tbPoint(w){
+    st.tbp[w]++;
+    tbRotateAfterPoint();
+
+    const a = st.tbp[0], b = st.tbp[1];
+    const mx = Math.max(a,b);
+    const lead = Math.abs(a-b);
+
+    if (mx >= 7 && lead >= 2){
+      // display set as 7-6
+      g()[w] = 7;
+      g()[1-w] = 6;
+      endSet(w);
+    }
+  }
+
+  function point(team){
+    if (st.locked){ showHint("🔒"); return; }
+    if (st.finished){ showHint("✓"); return; }
+
+    snap();
+
+    if (st.tb){
+      tbPoint(team);
+      render();
+      return;
+    }
+
+    st.pts[team]++;
+
+    if (rules.noAd){
+      // next point after 40-40 wins game
+      if (st.pts[0] >= 4 || st.pts[1] >= 4){
+        winGame(st.pts[0] > st.pts[1] ? 0 : 1);
+      }
+    } else {
+      const a = st.pts[0], b = st.pts[1];
+      if (Math.max(a,b) >= 4 && Math.abs(a-b) >= 2){
+        winGame(a > b ? 0 : 1);
+      }
+    }
+
+    render();
+  }
+
+  function renderServe(){
+    ui.ballA.className = "ball";
+    ui.ballB.className = "ball";
+
+    const el = st.serve ? ui.ballB : ui.ballA;
+    el.classList.add("show");
+    el.classList.add(st.side ? "right" : "left");
+  }
+
+  function render(){
+    for (let i=0;i<rules.maxSets;i++){
+      ui.a[i].textContent = st.games[i][0];
+      ui.b[i].textContent = st.games[i][1];
+    }
+
+    // points in first column
+    if (st.tb){
+      ui.ap.textContent = "TB " + st.tbp[0];
+      ui.bp.textContent = "TB " + st.tbp[1];
+    } else {
+      ui.ap.textContent = scoreLabel(st.pts[0]);
+      ui.bp.textContent = scoreLabel(st.pts[1]);
+    }
+
+    ui.lock.textContent = st.locked ? "🔒" : "🔓";
+    ui.lock.classList.toggle("lockOn", st.locked);
+
+    renderServe();
+  }
+
+  // --------- Controls ----------
+  ui.za.addEventListener("click", ()=>point(0));
+  ui.zb.addEventListener("click", ()=>point(1));
+
+  ui.lock.addEventListener("click", ()=>{
+    snap();
+    st.locked = !st.locked;
+    showHint(st.locked ? "🔒" : "🔓");
+    render();
+  });
+
+  ui.undo.addEventListener("click", ()=>{
+    if (st.locked){ showHint("🔒"); return; }
+    const s = st.hist.pop();
+    if (!s){ showHint("—"); return; }
+    applySnap(s);
+    render();
+    showHint("↶");
+  });
+
+  ui.reset.addEventListener("click", ()=>{
+    if (st.locked){ showHint("🔒"); return; }
+    snap();
+    st.locked=false;
+    st.finished=false;
+    st.pts=[0,0];
+    st.games=Array.from({length: rules.maxSets}, () => [0,0]);
+    st.set=0;
+    st.tb=false;
+    st.tbp=[0,0];
+    st.tbTotal=0;
+    st.won=[0,0];
+    st.serve=0;
+    st.side=0;
+    render();
+    showHint("⟲");
+  });
+
+  // manual serve adjust: tap the ball
+  function cycleServeManual(){
+    if (st.locked){ showHint("🔒"); return; }
+    snap();
+    st.side ^= 1;
+    if (st.side === 0) st.serve ^= 1;
+    render();
+    showHint("🎾");
+  }
+  ui.ballA.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
+  ui.ballB.addEventListener("click",(e)=>{ e.preventDefault(); cycleServeManual(); });
+
+  render();
 })();
 </script>
-
 </body>
 </html>
