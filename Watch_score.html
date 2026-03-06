@@ -2,208 +2,351 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=360, height=360, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>PadelTap Watch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PadelTap Smartwatch UI</title>
   <style>
-    html, body {
+    :root {
+      --watch-bg: #0f2340;
+      --watch-border: #0a1729;
+      --yellow-score: #f2c300;
+      --grey-score: #aeb4bd;
+      --light-blue: #66b8e8;
+      --light-blue-border: #2c7aa8;
+      --lock-red: #9b2b2b;
+      --lock-red-dark: #6f1717;
+      --text-light: #eaf4ff;
+      --grid-line: rgba(234, 244, 255, 0.35);
+      --text-dark-on-light: #123047;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
       margin: 0;
-      padding: 0;
-      width: 360px;
-      height: 360px;
-      overflow: hidden;
-      background: #0f2340;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #d7d7d7;
       font-family: Arial, sans-serif;
     }
 
+    .watch-shell {
+      width: 430px;
+      height: 430px;
+      border-radius: 50%;
+      background: #2e2e2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+      padding: 10px;
+    }
+
     .watch {
+      width: 100%;
+      height: 100%;
+      background: var(--watch-bg);
+      border: 3px solid var(--watch-border);
+      border-radius: 999px;
       position: relative;
-      width: 360px;
-      height: 360px;
-      border-radius: 180px;
-      background: #0f2340;
       overflow: hidden;
     }
 
     .mode-toggle {
       position: absolute;
-      top: 12px;
-      left: 143px;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 74px;
       height: 30px;
       border-radius: 16px;
-      background: #1d3a5c;
-      border: 2px solid #4f84a8;
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: bold;
-      line-height: 30px;
-      text-align: center;
+      background: rgba(255,255,255,0.14);
+      border: 2px solid rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
       cursor: pointer;
+      user-select: none;
+      z-index: 3;
+      color: var(--text-light);
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .mode-toggle .knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 26px;
+      height: 22px;
+      border-radius: 12px;
+      background: var(--light-blue);
+      transition: left 0.2s ease;
+    }
+
+    .mode-toggle.normal .knob {
+      left: 44px;
+    }
+
+    .mode-toggle span {
+      position: relative;
+      z-index: 1;
     }
 
     .sets-board {
       position: absolute;
-      left: 12px;
-      top: 126px;
-      width: 98px;
-      color: #ffffff;
+      left: 18px;
+      top: 146px;
+      width: 102px;
+      color: var(--text-light);
       font-weight: bold;
-      font-size: 11px;
+      z-index: 1;
     }
 
     .sets-row {
-      display: flex;
-      height: 24px;
+      display: grid;
+      grid-template-columns: 18px repeat(3, 28px);
     }
 
     .sets-cell {
+      height: 25px;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 24px;
-      border-right: 1px solid rgba(255,255,255,0.35);
-      border-bottom: 1px solid rgba(255,255,255,0.35);
+      background: transparent;
+      font-size: 12px;
     }
 
-    .sets-row:last-child .sets-cell {
-      border-bottom: none;
+    .sets-row:not(:last-child) .sets-cell {
+      border-bottom: 1px solid var(--grid-line);
     }
 
-    .sets-cell:last-child {
-      border-right: none;
+    .sets-row .sets-cell:not(:last-child) {
+      border-right: 1px solid var(--grid-line);
     }
 
-    .c0 { width: 16px; }
-    .c1, .c2, .c3 { width: 27px; }
+    .sets-head {
+      font-size: 11px;
+      opacity: 0.9;
+    }
 
-    .score-a, .score-b {
+    .sets-team {
+      font-size: 12px;
+    }
+
+    .center-stack {
       position: absolute;
-      left: 128px;
-      width: 104px;
-      height: 104px;
-      border-radius: 52px;
+      left: 57%;
+      top: 51%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .score-btn {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,0.18);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      color: var(--text-dark-on-light);
+      font-size: 31px;
       font-weight: bold;
-      border: 2px solid rgba(255,255,255,0.2);
       cursor: pointer;
       user-select: none;
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.18);
+      position: relative;
+      transition: transform 0.08s ease, opacity 0.2s ease, filter 0.2s ease;
+    }
+
+    .score-btn:active {
+      transform: scale(0.98);
+    }
+
+    .score-btn.disabled {
+      cursor: not-allowed;
+      opacity: 0.78;
+      filter: grayscale(0.1);
+    }
+
+    .score-btn.disabled::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(10, 23, 41, 0.22);
     }
 
     .score-a {
-      top: 72px;
-      background: #f2c300;
-      color: #123047;
+      background: var(--yellow-score);
+      transform: translateY(-10px);
     }
 
     .score-b {
-      top: 190px;
-      background: #aeb4bd;
-      color: #123047;
-    }
-
-    .disabled {
-      opacity: 0.6;
+      background: var(--grey-score);
     }
 
     .controls {
       position: absolute;
-      top: 110px;
-      right: 18px;
-      width: 52px;
+      right: 24px;
+      top: 54%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 3;
     }
 
     .small-btn {
-      width: 46px;
-      height: 46px;
-      margin-bottom: 12px;
-      border-radius: 23px;
-      background: #66b8e8;
-      border: 2px solid #2c7aa8;
-      color: white;
-      font-size: 18px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--light-blue-border);
+      background: var(--light-blue);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
       font-weight: bold;
-      line-height: 42px;
-      text-align: center;
       cursor: pointer;
       user-select: none;
+      position: relative;
+      transition: transform 0.08s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .small-btn:active {
+      transform: scale(0.96);
+    }
+
+    .small-btn.reset-btn,
+    .small-btn.lock-btn {
+      left: -6px;
     }
 
     .small-btn.locked {
-      background: #9b2b2b;
-      border-color: #6f1717;
+      background: var(--lock-red);
+      box-shadow: 0 0 0 3px rgba(155, 43, 43, 0.18);
+      border-color: var(--lock-red-dark);
+    }
+
+    .small-btn.locked::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 2px;
+      background: rgba(255,255,255,0.92);
+      transform: rotate(-35deg);
+      border-radius: 2px;
     }
 
     .small-btn.holding {
-      background: #9b2b2b;
+      background: var(--lock-red);
+      border-color: var(--lock-red-dark);
+    }
+
+    .small-btn.holding::before {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 3px solid rgba(155, 43, 43, 0.45);
+      animation: pulse 0.9s linear infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.96); opacity: 0.9; }
+      100% { transform: scale(1.08); opacity: 0.15; }
     }
 
     .set-indicator {
       position: absolute;
-      bottom: 16px;
-      left: 0;
-      width: 360px;
-      text-align: center;
-      color: #eaf4ff;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: 11px;
       font-weight: bold;
-      letter-spacing: 1px;
+      color: var(--text-light);
+      opacity: 0.85;
+      letter-spacing: 0.8px;
     }
 
     .lock-badge {
       position: absolute;
-      top: 52px;
-      right: 24px;
-      color: #ffb8b8;
+      top: 56px;
+      right: 34px;
       font-size: 11px;
       font-weight: bold;
-      display: none;
+      color: #ffb8b8;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 3;
+      letter-spacing: 0.6px;
+    }
+
+    .lock-badge.visible {
+      opacity: 1;
     }
   </style>
 </head>
 <body>
-  <div class="watch">
-    <div class="mode-toggle" id="modeToggle">G</div>
+  <div class="watch-shell">
+    <div class="watch">
+      <div class="mode-toggle" id="modeToggle" title="G = Golden Point / N = Normal">
+        <div class="knob"></div>
+        <span>G</span>
+        <span>N</span>
+      </div>
 
-    <div class="lock-badge" id="lockBadge">LOCKED</div>
+      <div class="lock-badge" id="lockBadge">LOCKED</div>
 
-    <div class="sets-board">
-      <div class="sets-row">
-        <div class="sets-cell c0"></div>
-        <div class="sets-cell c1">1</div>
-        <div class="sets-cell c2">2</div>
-        <div class="sets-cell c3">3</div>
+      <div class="sets-board">
+        <div class="sets-row">
+          <div class="sets-cell sets-head"></div>
+          <div class="sets-cell sets-head">1</div>
+          <div class="sets-cell sets-head">2</div>
+          <div class="sets-cell sets-head">3</div>
+        </div>
+        <div class="sets-row">
+          <div class="sets-cell sets-team">A</div>
+          <div class="sets-cell" id="setA1">0</div>
+          <div class="sets-cell" id="setA2">0</div>
+          <div class="sets-cell" id="setA3">0</div>
+        </div>
+        <div class="sets-row">
+          <div class="sets-cell sets-team">B</div>
+          <div class="sets-cell" id="setB1">0</div>
+          <div class="sets-cell" id="setB2">0</div>
+          <div class="sets-cell" id="setB3">0</div>
+        </div>
       </div>
-      <div class="sets-row">
-        <div class="sets-cell c0">A</div>
-        <div class="sets-cell c1" id="setA1">0</div>
-        <div class="sets-cell c2" id="setA2">0</div>
-        <div class="sets-cell c3" id="setA3">0</div>
+
+      <div class="center-stack">
+        <div class="score-btn score-a" id="scoreA">0</div>
+        <div class="score-btn score-b" id="scoreB">0</div>
       </div>
-      <div class="sets-row">
-        <div class="sets-cell c0">B</div>
-        <div class="sets-cell c1" id="setB1">0</div>
-        <div class="sets-cell c2" id="setB2">0</div>
-        <div class="sets-cell c3" id="setB3">0</div>
+
+      <div class="controls">
+        <div class="small-btn reset-btn" id="resetBtn" title="Long press to reset">R</div>
+        <div class="small-btn" id="undoBtn">U</div>
+        <div class="small-btn lock-btn" id="lockBtn">L</div>
       </div>
+
+      <div class="set-indicator" id="setIndicator">SET 1</div>
     </div>
-
-    <div class="score-a" id="scoreA">0</div>
-    <div class="score-b" id="scoreB">0</div>
-
-    <div class="controls">
-      <div class="small-btn" id="resetBtn">R</div>
-      <div class="small-btn" id="undoBtn">U</div>
-      <div class="small-btn" id="lockBtn">L</div>
-    </div>
-
-    <div class="set-indicator" id="setIndicator">SET 1</div>
   </div>
 
   <script>
-    var state = {
+    let state = {
       pointA: 0,
       pointB: 0,
       sets: [
@@ -216,19 +359,19 @@
       mode: "golden"
     };
 
-    var history = [];
-    var resetPressTimer = null;
+    const history = [];
+    let resetPressTimer = null;
 
-    var scoreAEl = document.getElementById("scoreA");
-    var scoreBEl = document.getElementById("scoreB");
-    var resetBtn = document.getElementById("resetBtn");
-    var undoBtn = document.getElementById("undoBtn");
-    var lockBtn = document.getElementById("lockBtn");
-    var modeToggle = document.getElementById("modeToggle");
-    var setIndicator = document.getElementById("setIndicator");
-    var lockBadge = document.getElementById("lockBadge");
+    const scoreAEl = document.getElementById("scoreA");
+    const scoreBEl = document.getElementById("scoreB");
+    const resetBtn = document.getElementById("resetBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const lockBtn = document.getElementById("lockBtn");
+    const modeToggle = document.getElementById("modeToggle");
+    const setIndicator = document.getElementById("setIndicator");
+    const lockBadge = document.getElementById("lockBadge");
 
-    var setEls = {
+    const setEls = {
       a1: document.getElementById("setA1"),
       a2: document.getElementById("setA2"),
       a3: document.getElementById("setA3"),
@@ -250,20 +393,21 @@
     }
 
     function currentSetFinished(setObj) {
-      var a = setObj.a;
-      var b = setObj.b;
+      const a = setObj.a;
+      const b = setObj.b;
       return (a >= 6 || b >= 6) && Math.abs(a - b) >= 2;
     }
 
     function advanceSetIfNeeded() {
-      var setObj = state.sets[state.currentSet];
+      const setObj = state.sets[state.currentSet];
       if (currentSetFinished(setObj) && state.currentSet < 2) {
         state.currentSet += 1;
       }
     }
 
     function winGame(team) {
-      var setObj = state.sets[state.currentSet];
+      const setObj = state.sets[state.currentSet];
+
       if (team === "A") setObj.a += 1;
       else setObj.b += 1;
 
@@ -369,11 +513,11 @@
     }
 
     function getDisplayScore(team) {
-      var a = state.pointA;
-      var b = state.pointB;
+      const a = state.pointA;
+      const b = state.pointB;
 
       if (state.mode === "golden") {
-        var labels = ["0", "15", "30", "40"];
+        const labels = ["0", "15", "30", "40"];
         return team === "A" ? labels[Math.min(a, 3)] : labels[Math.min(b, 3)];
       }
 
@@ -383,8 +527,8 @@
         return b > a ? "A" : "40";
       }
 
-      var labels2 = ["0", "15", "30", "40", "A"];
-      return team === "A" ? labels2[a] : labels2[b];
+      const labels = ["0", "15", "30", "40", "A"];
+      return team === "A" ? labels[a] : labels[b];
     }
 
     function resetAll() {
@@ -424,16 +568,16 @@
     }
 
     function startResetHold() {
-      resetBtn.className = "small-btn holding";
-      resetPressTimer = setTimeout(function() {
-        resetBtn.className = "small-btn";
+      resetBtn.classList.add("holding");
+      resetPressTimer = setTimeout(() => {
+        resetBtn.classList.remove("holding");
         resetAll();
       }, 900);
     }
 
     function cancelResetHold() {
       clearTimeout(resetPressTimer);
-      resetBtn.className = "small-btn";
+      resetBtn.classList.remove("holding");
     }
 
     function render() {
@@ -447,45 +591,48 @@
       setEls.b2.textContent = state.sets[1].b;
       setEls.b3.textContent = state.sets[2].b;
 
-      setIndicator.textContent = "SET " + Math.min(state.currentSet + 1, 3);
+      setIndicator.textContent = `SET ${Math.min(state.currentSet + 1, 3)}`;
 
       if (state.locked) {
-        lockBtn.className = "small-btn locked";
-        lockBadge.style.display = "block";
-        scoreAEl.className = "score-a score-btn disabled";
-        scoreBEl.className = "score-b score-btn disabled";
+        lockBtn.classList.add("locked");
+        lockBadge.classList.add("visible");
+        scoreAEl.classList.add("disabled");
+        scoreBEl.classList.add("disabled");
       } else {
-        lockBtn.className = "small-btn";
-        lockBadge.style.display = "none";
-        scoreAEl.className = "score-a score-btn";
-        scoreBEl.className = "score-b score-btn";
+        lockBtn.classList.remove("locked");
+        lockBadge.classList.remove("visible");
+        scoreAEl.classList.remove("disabled");
+        scoreBEl.classList.remove("disabled");
       }
 
-      modeToggle.className = state.mode === "normal" ? "mode-toggle normal" : "mode-toggle";
-      modeToggle.textContent = state.mode === "golden" ? "G" : "N";
+      if (state.mode === "normal") {
+        modeToggle.classList.add("normal");
+      } else {
+        modeToggle.classList.remove("normal");
+      }
     }
 
-    scoreAEl.onclick = incrementA;
-    scoreBEl.onclick = incrementB;
-    undoBtn.onclick = undo;
-    lockBtn.onclick = toggleLock;
-    modeToggle.onclick = toggleMode;
+    scoreAEl.addEventListener("click", incrementA);
+    scoreBEl.addEventListener("click", incrementB);
+    undoBtn.addEventListener("click", undo);
+    lockBtn.addEventListener("click", toggleLock);
+    modeToggle.addEventListener("click", toggleMode);
 
-    resetBtn.onmousedown = startResetHold;
-    resetBtn.onmouseup = cancelResetHold;
-    resetBtn.onmouseleave = cancelResetHold;
+    resetBtn.addEventListener("mousedown", startResetHold);
+    resetBtn.addEventListener("mouseup", cancelResetHold);
+    resetBtn.addEventListener("mouseleave", cancelResetHold);
 
-    resetBtn.ontouchstart = function(e) {
+    resetBtn.addEventListener("touchstart", (e) => {
       e.preventDefault();
       startResetHold();
-    };
+    }, { passive: false });
 
-    resetBtn.ontouchend = function(e) {
+    resetBtn.addEventListener("touchend", (e) => {
       e.preventDefault();
       cancelResetHold();
-    };
+    }, { passive: false });
 
-    resetBtn.ontouchcancel = cancelResetHold;
+    resetBtn.addEventListener("touchcancel", cancelResetHold);
 
     render();
   </script>
