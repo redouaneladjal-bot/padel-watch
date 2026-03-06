@@ -6,47 +6,56 @@
   <title>PadelTap Smartwatch UI</title>
   <style>
     :root {
-      --watch-yellow: #ece81a;
-      --deep-blue: #155f83;
-      --deep-blue-border: #143847;
-      --score-orange: #e6ac00;
-      --lock-red: #8e2020;
+      --watch-bg: #0f2340;
+      --watch-border: #0a1729;
+      --yellow-score: #f2c300;
+      --grey-score: #aeb4bd;
+      --light-blue: #66b8e8;
+      --light-blue-border: #2c7aa8;
+      --lock-red: #9b2b2b;
       --lock-red-dark: #6f1717;
-      --text-dark: #183847;
-      --grid-line: rgba(24, 56, 71, 0.5);
+      --text-light: #eaf4ff;
+      --grid-line: rgba(234, 244, 255, 0.35);
+      --text-dark-on-light: #123047;
     }
 
     * {
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #cfcfcf;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #d7d7d7;
-      font-family: Arial, sans-serif;
     }
 
     .watch-shell {
-      width: 430px;
-      height: 430px;
+      width: min(92vw, 430px);
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
-      background: #2e2e2e;
+      background: #202020;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28);
       padding: 10px;
+      flex-shrink: 0;
     }
 
     .watch {
       width: 100%;
       height: 100%;
-      background: var(--watch-yellow);
-      border: 3px solid #1d1d1d;
+      aspect-ratio: 1 / 1;
+      background: var(--watch-bg);
+      border: 3px solid var(--watch-border);
       border-radius: 50%;
       position: relative;
       overflow: hidden;
@@ -60,8 +69,8 @@
       width: 74px;
       height: 30px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.75);
-      border: 2px solid var(--deep-blue-border);
+      background: rgba(255,255,255,0.14);
+      border: 2px solid rgba(255,255,255,0.18);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -69,9 +78,10 @@
       cursor: pointer;
       user-select: none;
       z-index: 3;
-      color: var(--text-dark);
+      color: var(--text-light);
       font-weight: bold;
       font-size: 13px;
+      backdrop-filter: blur(2px);
     }
 
     .mode-toggle .knob {
@@ -81,7 +91,7 @@
       width: 26px;
       height: 22px;
       border-radius: 12px;
-      background: var(--deep-blue);
+      background: var(--light-blue);
       transition: left 0.2s ease;
     }
 
@@ -96,26 +106,26 @@
 
     .sets-board {
       position: absolute;
-      left: 36px;
-      top: 140px;
-      width: 108px;
-      color: var(--text-dark);
+      left: 22px;
+      top: 144px;
+      width: 104px;
+      color: var(--text-light);
       font-weight: bold;
       z-index: 1;
     }
 
     .sets-row {
       display: grid;
-      grid-template-columns: 18px repeat(3, 30px);
+      grid-template-columns: 18px repeat(3, 28px);
     }
 
     .sets-cell {
-      height: 26px;
+      height: 25px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: transparent;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .sets-row:not(:last-child) .sets-cell {
@@ -128,7 +138,7 @@
 
     .sets-head {
       font-size: 11px;
-      opacity: 0.85;
+      opacity: 0.9;
     }
 
     .sets-team {
@@ -137,30 +147,30 @@
 
     .center-stack {
       position: absolute;
-      left: 56%;
-      top: 54%;
+      left: 57%;
+      top: 51%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
       z-index: 2;
     }
 
     .score-btn {
-      width: 116px;
-      height: 116px;
+      width: 112px;
+      height: 112px;
       border-radius: 50%;
-      border: 2.5px solid var(--deep-blue-border);
+      border: 2.5px solid rgba(255,255,255,0.18);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: var(--text-dark-on-light);
       font-size: 31px;
       font-weight: bold;
       cursor: pointer;
       user-select: none;
-      box-shadow: inset 0 2px 0 rgba(255,255,255,0.14);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.18);
       position: relative;
       transition: transform 0.08s ease, opacity 0.2s ease, filter 0.2s ease;
     }
@@ -171,8 +181,8 @@
 
     .score-btn.disabled {
       cursor: not-allowed;
-      opacity: 0.8;
-      filter: grayscale(0.15);
+      opacity: 0.78;
+      filter: grayscale(0.1);
     }
 
     .score-btn.disabled::after {
@@ -180,15 +190,16 @@
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background: rgba(20, 56, 71, 0.18);
+      background: rgba(10, 23, 41, 0.22);
     }
 
     .score-a {
-      background: var(--deep-blue);
+      background: var(--yellow-score);
+      transform: translateY(-8px);
     }
 
     .score-b {
-      background: var(--score-orange);
+      background: var(--grey-score);
     }
 
     .controls {
@@ -206,9 +217,9 @@
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      border: 2px solid var(--deep-blue-border);
-      background: var(--deep-blue);
-      color: white;
+      border: 2px solid var(--light-blue-border);
+      background: var(--light-blue);
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -231,7 +242,7 @@
 
     .small-btn.locked {
       background: var(--lock-red);
-      box-shadow: 0 0 0 3px rgba(142, 32, 32, 0.18);
+      box-shadow: 0 0 0 3px rgba(155, 43, 43, 0.18);
       border-color: var(--lock-red-dark);
     }
 
@@ -240,13 +251,14 @@
       position: absolute;
       width: 18px;
       height: 2px;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.92);
       transform: rotate(-35deg);
       border-radius: 2px;
     }
 
     .small-btn.holding {
       background: var(--lock-red);
+      border-color: var(--lock-red-dark);
     }
 
     .small-btn.holding::before {
@@ -254,7 +266,7 @@
       position: absolute;
       inset: -4px;
       border-radius: 50%;
-      border: 3px solid rgba(142, 32, 32, 0.45);
+      border: 3px solid rgba(155, 43, 43, 0.45);
       animation: pulse 0.9s linear infinite;
     }
 
@@ -270,7 +282,7 @@
       transform: translateX(-50%);
       font-size: 11px;
       font-weight: bold;
-      color: var(--text-dark);
+      color: var(--text-light);
       opacity: 0.85;
       letter-spacing: 0.8px;
     }
@@ -281,7 +293,7 @@
       right: 34px;
       font-size: 11px;
       font-weight: bold;
-      color: var(--lock-red-dark);
+      color: #ffb8b8;
       opacity: 0;
       transition: opacity 0.2s ease;
       z-index: 3;
@@ -356,7 +368,6 @@
 
     const history = [];
     let resetPressTimer = null;
-    let resetTriggered = false;
 
     const scoreAEl = document.getElementById("scoreA");
     const scoreBEl = document.getElementById("scoreB");
@@ -568,10 +579,8 @@
     }
 
     function startResetHold() {
-      resetTriggered = false;
       resetBtn.classList.add("holding");
       resetPressTimer = setTimeout(() => {
-        resetTriggered = true;
         resetBtn.classList.remove("holding");
         resetAll();
       }, 900);
@@ -597,13 +606,11 @@
 
       if (state.locked) {
         lockBtn.classList.add("locked");
-        lockBtn.textContent = "L";
         lockBadge.classList.add("visible");
         scoreAEl.classList.add("disabled");
         scoreBEl.classList.add("disabled");
       } else {
         lockBtn.classList.remove("locked");
-        lockBtn.textContent = "L";
         lockBadge.classList.remove("visible");
         scoreAEl.classList.remove("disabled");
         scoreBEl.classList.remove("disabled");
