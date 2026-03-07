@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PadelTap Watch Layout V4</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PadelTap Watch Layout V5</title>
 <style>
 :root{
-  --bg:#0f2340;
+  --bg:#123cbe;
   --shell:#232323;
   --yellow:#f2c300;
-  --grey:#aeb4bd;
-  --blue:#66b8e8;
+  --grey:#e8dff0;
+  --blue:#66d2ff;
   --blueBorder:#2c7aa8;
-  --grid:rgba(234,244,255,0.42);
-  --text:#eaf4ff;
+  --grid:rgba(234,244,255,0.55);
+  --text:#f3f8ff;
   --textDark:#123047;
   --lock:#9b2b2b;
   --lockBorder:#6f1717;
@@ -56,14 +56,22 @@ body{
   overflow:hidden;
   border:3px solid #081320;
 }
+
+/* Everything is kept inside a safe circle area */
+.safe{
+  position:absolute;
+  inset:22px;
+  border-radius:50%;
+}
+
 .mode{
   position:absolute;
-  top:18px;
+  top:6px;
   left:50%;
   transform:translateX(-50%);
-  width:78px;
-  height:32px;
-  border-radius:16px;
+  width:54px;
+  height:26px;
+  border-radius:13px;
   border:2px solid rgba(255,255,255,.18);
   background:rgba(255,255,255,.10);
   display:flex;
@@ -71,47 +79,50 @@ body{
   justify-content:center;
   color:var(--text);
   font-weight:bold;
-  font-size:14px;
+  font-size:13px;
 }
+
 .setLabel{
   position:absolute;
-  top:60px;
-  left:40px;
+  top:38px;
+  left:16px;
   color:var(--text);
-  font-size:13px;
+  font-size:12px;
   font-weight:bold;
-  letter-spacing:.8px;
+  letter-spacing:.7px;
 }
+
 .lockBadge{
   position:absolute;
-  top:60px;
-  right:38px;
-  color:#ffb8b8;
-  font-size:12px;
+  top:38px;
+  right:18px;
+  color:#ffccd0;
+  font-size:11px;
   font-weight:bold;
   opacity:0;
 }
 .lockBadge.visible{opacity:1;}
+
 .sets{
   position:absolute;
-  left:34px;
-  top:112px;
-  width:150px;
+  left:18px;
+  top:82px;
+  width:138px;
   color:var(--text);
 }
 .row{
   display:grid;
-  grid-template-columns:repeat(3,50px);
+  grid-template-columns:repeat(3,46px);
 }
 .cell{
-  height:40px;
+  height:38px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:21px;
+  font-size:20px;
 }
 .head{
-  font-size:16px;
+  font-size:15px;
   font-weight:bold;
 }
 .row:not(:last-child) .cell{border-bottom:1px solid var(--grid);}
@@ -119,10 +130,10 @@ body{
 
 .reset{
   position:absolute;
-  left:84px;
-  top:258px;
-  width:54px;
-  height:54px;
+  left:38px;
+  top:210px;
+  width:56px;
+  height:56px;
   border-radius:50%;
   background:var(--blue);
   border:2px solid var(--blueBorder);
@@ -130,7 +141,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:20px;
+  font-size:21px;
   font-weight:bold;
 }
 .reset.holding{
@@ -140,17 +151,16 @@ body{
 
 .scores{
   position:absolute;
-  left:69%;
-  top:56%;
-  transform:translate(-50%,-50%);
+  right:20px;
+  top:82px;
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:18px;
   align-items:center;
 }
 .score{
-  width:112px;
-  height:112px;
+  width:118px;
+  height:118px;
   border-radius:50%;
   display:flex;
   align-items:center;
@@ -183,12 +193,13 @@ body{
   border-radius:50%;
   background:rgba(10,23,41,.22);
 }
+
 .undo{
   position:absolute;
-  left:176px;
-  bottom:26px;
-  width:50px;
-  height:50px;
+  left:138px;
+  bottom:28px;
+  width:54px;
+  height:54px;
   border-radius:50%;
   background:var(--blue);
   border:2px solid var(--blueBorder);
@@ -196,15 +207,16 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:19px;
+  font-size:21px;
   font-weight:bold;
 }
+
 .lock{
   position:absolute;
-  left:332px;
-  top:210px;
-  width:50px;
-  height:50px;
+  right:22px;
+  top:194px;
+  width:54px;
+  height:54px;
   border-radius:50%;
   background:var(--blue);
   border:2px solid var(--blueBorder);
@@ -212,57 +224,61 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:19px;
+  font-size:21px;
   font-weight:bold;
 }
 .lock.locked{
   background:var(--lock);
   border-color:var(--lockBorder);
 }
+
 .hint{
   position:absolute;
-  bottom:28px;
-  right:42px;
-  color:rgba(234,244,255,.72);
+  bottom:12px;
+  right:14px;
+  color:rgba(234,244,255,.75);
   font-size:10px;
+  white-space:nowrap;
 }
 </style>
 </head>
 <body>
 <div class="shell">
   <div class="watch">
-    <div class="mode" id="modeBtn">G</div>
-    <div class="setLabel" id="setLabel">SET 1</div>
-    <div class="lockBadge" id="lockBadge">LOCKED</div>
+    <div class="safe">
+      <div class="mode" id="modeBtn">G</div>
+      <div class="setLabel" id="setLabel">SET 1</div>
+      <div class="lockBadge" id="lockBadge">LOCKED</div>
 
-    <div class="sets">
-      <div class="row">
-        <div class="cell head">1</div>
-        <div class="cell head">2</div>
-        <div class="cell head">3</div>
+      <div class="sets">
+        <div class="row">
+          <div class="cell head">1</div>
+          <div class="cell head">2</div>
+          <div class="cell head">3</div>
+        </div>
+        <div class="row">
+          <div class="cell" id="setA1">0</div>
+          <div class="cell" id="setA2">0</div>
+          <div class="cell" id="setA3">0</div>
+        </div>
+        <div class="row">
+          <div class="cell" id="setB1">0</div>
+          <div class="cell" id="setB2">0</div>
+          <div class="cell" id="setB3">0</div>
+        </div>
       </div>
-      <div class="row">
-        <div class="cell" id="setA1">0</div>
-        <div class="cell" id="setA2">0</div>
-        <div class="cell" id="setA3">0</div>
+
+      <div class="reset" id="resetBtn">R</div>
+
+      <div class="scores">
+        <div class="score scoreA owner" id="scoreA">0</div>
+        <div class="score scoreB" id="scoreB">0</div>
       </div>
-      <div class="row">
-        <div class="cell" id="setB1">0</div>
-        <div class="cell" id="setB2">0</div>
-        <div class="cell" id="setB3">0</div>
-      </div>
+
+      <div class="undo" id="undoBtn">U</div>
+      <div class="lock" id="lockBtn">L</div>
+      <div class="hint">G = golden / N = normal</div>
     </div>
-
-    <div class="reset" id="resetBtn">R</div>
-
-    <div class="scores">
-      <div class="score scoreA owner" id="scoreA">0</div>
-      <div class="score scoreB" id="scoreB">0</div>
-    </div>
-
-    <div class="undo" id="undoBtn">U</div>
-    <div class="lock" id="lockBtn">L</div>
-    <div class="hint">G = golden / N = normal</div>
   </div>
 </div>
 
@@ -491,17 +507,14 @@ bindTap(modeBtn, toggleMode);
 resetBtn.addEventListener("mousedown", startResetHold);
 resetBtn.addEventListener("mouseup", cancelResetHold);
 resetBtn.addEventListener("mouseleave", cancelResetHold);
-
 resetBtn.addEventListener("touchstart", function(e){
   e.preventDefault();
   startResetHold();
 }, {passive:false});
-
 resetBtn.addEventListener("touchend", function(e){
   e.preventDefault();
   cancelResetHold();
 }, {passive:false});
-
 resetBtn.addEventListener("touchcancel", cancelResetHold);
 
 render();
