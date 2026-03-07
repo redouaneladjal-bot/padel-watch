@@ -1,286 +1,562 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>PadelTap</title>
-
 <style>
+  :root{
+    --bg:#123cbe;
+    --yellow:#f2c300;
+    --grey:#e9deef;
+    --blue:#66d2ff;
+    --blueBorder:#2c7aa8;
+    --text:#f3f8ff;
+    --textDark:#123047;
+    --grid:rgba(255,255,255,0.5);
+    --lock:#9b2b2b;
+    --lockBorder:#6f1717;
+  }
 
-body{
-margin:0;
-background:#123cbe;
-font-family:Arial;
-color:white;
-overflow:hidden;
-}
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:var(--bg);
+    font-family:Arial,Helvetica,sans-serif;
+  }
 
-#app{
-width:100vw;
-height:100vh;
-position:relative;
-}
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    user-select:none;
+  }
 
-/* MODE */
+  #app{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    background:var(--bg);
+    overflow:hidden;
+  }
 
-.mode{
-position:absolute;
-top:4%;
-left:40%;
-width:60px;
-height:30px;
-border-radius:15px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(255,255,255,0.2);
-border:2px solid rgba(255,255,255,0.4);
-font-weight:bold;
-}
+  .mode{
+    position:absolute;
+    top:4%;
+    left:40%;
+    width:60px;
+    height:30px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    color:white;
+    background:rgba(255,255,255,0.18);
+    border:2px solid rgba(255,255,255,0.28);
+  }
 
-.modeLabel{
-position:absolute;
-top:10%;
-left:37%;
-font-size:11px;
-}
+  .modeLabel{
+    position:absolute;
+    top:10%;
+    left:36%;
+    font-size:11px;
+    color:white;
+    font-weight:bold;
+  }
 
-/* LOCK */
+  .lock{
+    position:absolute;
+    top:4%;
+    left:63%;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--blue);
+    border:2px solid var(--blueBorder);
+    color:white;
+    font-weight:bold;
+    font-size:18px;
+  }
 
-.lock{
-position:absolute;
-top:4%;
-left:65%;
-width:48px;
-height:48px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-background:#66d2ff;
-border:2px solid #2c7aa8;
-font-weight:bold;
-}
+  .lock.locked{
+    background:var(--lock);
+    border-color:var(--lockBorder);
+  }
 
-/* SET TABLE */
+  .setLabel{
+    position:absolute;
+    left:8%;
+    top:18%;
+    font-weight:bold;
+    color:white;
+    font-size:13px;
+  }
 
-.setLabel{
-position:absolute;
-left:8%;
-top:18%;
-font-weight:bold;
-}
+  .sets{
+    position:absolute;
+    left:8%;
+    top:26%;
+    width:35%;
+    color:white;
+  }
 
-.sets{
-position:absolute;
-left:8%;
-top:26%;
-width:35%;
-}
+  .row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+  }
 
-.row{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-}
+  .cell{
+    height:38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+  }
 
-.cell{
-height:38px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:20px;
-}
+  .head{
+    font-size:15px;
+    font-weight:bold;
+  }
 
-.row:not(:last-child) .cell{
-border-bottom:1px solid rgba(255,255,255,0.5);
-}
+  .row:not(:last-child) .cell{
+    border-bottom:1px solid var(--grid);
+  }
 
-.row .cell:not(:last-child){
-border-right:1px solid rgba(255,255,255,0.5);
-}
+  .row .cell:not(:last-child){
+    border-right:1px solid var(--grid);
+  }
 
-/* SCORE BUTTONS */
+  .score{
+    position:absolute;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+    font-weight:bold;
+    color:var(--textDark);
+  }
 
-.score{
-position:absolute;
-width:120px;
-height:120px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:42px;
-font-weight:bold;
-color:#123047;
-}
+  .scoreA{
+    top:22%;
+    left:58%;
+    background:var(--yellow);
+    box-shadow:0 0 0 5px white;
+  }
 
-.scoreA{
-top:22%;
-left:58%;
-background:#f2c300;
-box-shadow:0 0 0 5px white;
-}
+  .scoreB{
+    top:56%;
+    left:58%;
+    background:var(--grey);
+  }
 
-.scoreB{
-top:56%;
-left:58%;
-background:#e9deef;
-}
+  .disabled{
+    opacity:0.72;
+    filter:grayscale(0.08);
+  }
 
-/* BOTTOM BUTTONS */
+  .reset{
+    position:absolute;
+    left:12%;
+    top:72%;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--blue);
+    border:2px solid var(--blueBorder);
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+  }
 
-.reset{
-position:absolute;
-left:12%;
-top:72%;
-width:60px;
-height:60px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-background:#66d2ff;
-border:2px solid #2c7aa8;
-font-size:22px;
-font-weight:bold;
-}
+  .undo{
+    position:absolute;
+    left:30%;
+    top:72%;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--blue);
+    border:2px solid var(--blueBorder);
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+  }
 
-.undo{
-position:absolute;
-left:30%;
-top:72%;
-width:60px;
-height:60px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-background:#66d2ff;
-border:2px solid #2c7aa8;
-font-size:22px;
-font-weight:bold;
-}
-
+  .holding{
+    background:var(--lock) !important;
+    border-color:var(--lockBorder) !important;
+  }
 </style>
 </head>
-
 <body>
 
 <div id="app">
+  <div class="mode" id="modeBtn">G</div>
+  <div class="modeLabel" id="modeLabel">G - Golden</div>
+  <div class="lock" id="lockBtn">L</div>
 
-<div class="mode">G</div>
-<div class="modeLabel">G - Golden</div>
-<div class="lock">L</div>
+  <div class="setLabel" id="setLabel">SET 1</div>
 
-<div class="setLabel">SET 1</div>
+  <div class="sets">
+    <div class="row">
+      <div class="cell head">1</div>
+      <div class="cell head">2</div>
+      <div class="cell head">3</div>
+    </div>
+    <div class="row">
+      <div class="cell" id="setA1">0</div>
+      <div class="cell" id="setA2">0</div>
+      <div class="cell" id="setA3">0</div>
+    </div>
+    <div class="row">
+      <div class="cell" id="setB1">0</div>
+      <div class="cell" id="setB2">0</div>
+      <div class="cell" id="setB3">0</div>
+    </div>
+  </div>
 
-<div class="sets">
+  <div class="score scoreA" id="scoreA">0</div>
+  <div class="score scoreB" id="scoreB">0</div>
 
-<div class="row">
-<div class="cell">1</div>
-<div class="cell">2</div>
-<div class="cell">3</div>
-</div>
-
-<div class="row">
-<div class="cell">0</div>
-<div class="cell">0</div>
-<div class="cell">0</div>
-</div>
-
-<div class="row">
-<div class="cell">0</div>
-<div class="cell">0</div>
-<div class="cell">0</div>
-</div>
-
-</div>
-
-<div class="score scoreA" id="scoreA">0</div>
-<div class="score scoreB" id="scoreB">0</div>
-
-<div class="reset" id="resetBtn">R</div>
-<div class="undo" id="undoBtn">U</div>
-
+  <div class="reset" id="resetBtn">R</div>
+  <div class="undo" id="undoBtn">U</div>
 </div>
 
 <script>
+  let state = {
+    pointA: 0,
+    pointB: 0,
+    sets: [
+      { a: 0, b: 0 },
+      { a: 0, b: 0 },
+      { a: 0, b: 0 }
+    ],
+    currentSet: 0,
+    locked: false,
+    mode: "golden"
+  };
 
-let scoreA=0
-let scoreB=0
+  const history = [];
+  let resetTimer = null;
+  let undoTimer = null;
 
-function vibrate(){
-if(navigator.vibrate) navigator.vibrate(30)
-}
+  const scoreAEl = document.getElementById("scoreA");
+  const scoreBEl = document.getElementById("scoreB");
+  const modeBtn = document.getElementById("modeBtn");
+  const modeLabel = document.getElementById("modeLabel");
+  const lockBtn = document.getElementById("lockBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const undoBtn = document.getElementById("undoBtn");
+  const setLabel = document.getElementById("setLabel");
 
-function nextScore(v){
-if(v==0) return 15
-if(v==15) return 30
-if(v==30) return 40
-return 0
-}
+  const setEls = {
+    a1: document.getElementById("setA1"),
+    a2: document.getElementById("setA2"),
+    a3: document.getElementById("setA3"),
+    b1: document.getElementById("setB1"),
+    b2: document.getElementById("setB2"),
+    b3: document.getElementById("setB3")
+  };
 
-document.getElementById("scoreA").onclick=function(){
-scoreA=nextScore(scoreA)
-this.innerText=scoreA
-vibrate()
-}
+  function vibrate(ms){
+    if (navigator.vibrate) navigator.vibrate(ms || 30);
+  }
 
-document.getElementById("scoreB").onclick=function(){
-scoreB=nextScore(scoreB)
-this.innerText=scoreB
-vibrate()
-}
+  function cloneState(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
 
-/* LONG PRESS RESET */
+  function saveHistory(){
+    history.push(cloneState(state));
+    if (history.length > 100) history.shift();
+  }
 
-let resetTimer
+  function bindTap(el, handler){
+    let touched = false;
 
-document.getElementById("resetBtn").addEventListener("touchstart",function(){
+    el.addEventListener("touchstart", function(e){
+      touched = true;
+      e.preventDefault();
+      handler();
+    }, { passive:false });
 
-resetTimer=setTimeout(function(){
+    el.addEventListener("click", function(e){
+      if (touched){
+        touched = false;
+        return;
+      }
+      e.preventDefault();
+      handler();
+    });
+  }
 
-scoreA=0
-scoreB=0
+  function isDeuceState(){
+    return state.pointA >= 3 && state.pointB >= 3;
+  }
 
-document.getElementById("scoreA").innerText=0
-document.getElementById("scoreB").innerText=0
+  function currentSetFinished(setObj){
+    const a = setObj.a;
+    const b = setObj.b;
+    return (a >= 6 || b >= 6) && Math.abs(a - b) >= 2;
+  }
 
-vibrate()
+  function advanceSetIfNeeded(){
+    const current = state.sets[state.currentSet];
+    if (currentSetFinished(current) && state.currentSet < 2){
+      state.currentSet += 1;
+    }
+  }
 
-},800)
+  function winGame(team){
+    const current = state.sets[state.currentSet];
 
-})
+    if (team === "A") current.a += 1;
+    else current.b += 1;
 
-document.getElementById("resetBtn").addEventListener("touchend",function(){
-clearTimeout(resetTimer)
-})
+    state.pointA = 0;
+    state.pointB = 0;
 
-/* LONG PRESS UNDO */
+    advanceSetIfNeeded();
+  }
 
-let undoTimer
+  function incrementAGolden(){
+    if (state.pointA <= 2){
+      state.pointA += 1;
+      return;
+    }
+    if (state.pointA === 3 && state.pointB < 3){
+      winGame("A");
+      return;
+    }
+    if (state.pointA === 3 && state.pointB === 3){
+      winGame("A");
+    }
+  }
 
-document.getElementById("undoBtn").addEventListener("touchstart",function(){
+  function incrementBGolden(){
+    if (state.pointB <= 2){
+      state.pointB += 1;
+      return;
+    }
+    if (state.pointB === 3 && state.pointA < 3){
+      winGame("B");
+      return;
+    }
+    if (state.pointA === 3 && state.pointB === 3){
+      winGame("B");
+    }
+  }
 
-undoTimer=setTimeout(function(){
+  function incrementANormal(){
+    if (!isDeuceState()){
+      if (state.pointA <= 2){
+        state.pointA += 1;
+        return;
+      }
+      if (state.pointA === 3 && state.pointB < 3){
+        winGame("A");
+        return;
+      }
+      if (state.pointA === 3 && state.pointB === 3){
+        state.pointA = 4;
+        return;
+      }
+    } else {
+      if (state.pointA === state.pointB){
+        state.pointA += 1;
+      } else if (state.pointA > state.pointB){
+        winGame("A");
+      } else {
+        state.pointA = 3;
+        state.pointB = 3;
+      }
+    }
+  }
 
-scoreA=0
-scoreB=0
+  function incrementBNormal(){
+    if (!isDeuceState()){
+      if (state.pointB <= 2){
+        state.pointB += 1;
+        return;
+      }
+      if (state.pointB === 3 && state.pointA < 3){
+        winGame("B");
+        return;
+      }
+      if (state.pointA === 3 && state.pointB === 3){
+        state.pointB = 4;
+        return;
+      }
+    } else {
+      if (state.pointA === state.pointB){
+        state.pointB += 1;
+      } else if (state.pointB > state.pointA){
+        winGame("B");
+      } else {
+        state.pointA = 3;
+        state.pointB = 3;
+      }
+    }
+  }
 
-document.getElementById("scoreA").innerText=0
-document.getElementById("scoreB").innerText=0
+  function incrementA(){
+    if (state.locked) return;
+    saveHistory();
 
-vibrate()
+    if (state.mode === "golden") incrementAGolden();
+    else incrementANormal();
 
-},600)
+    vibrate(25);
+    render();
+  }
 
-})
+  function incrementB(){
+    if (state.locked) return;
+    saveHistory();
 
-document.getElementById("undoBtn").addEventListener("touchend",function(){
-clearTimeout(undoTimer)
-})
+    if (state.mode === "golden") incrementBGolden();
+    else incrementBNormal();
 
+    vibrate(25);
+    render();
+  }
+
+  function getDisplayScore(team){
+    const a = state.pointA;
+    const b = state.pointB;
+
+    if (state.mode === "golden"){
+      const labels = ["0","15","30","40"];
+      return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
+    }
+
+    if (a >= 3 && b >= 3){
+      if (a === b) return "D";
+      if (team === "A") return a > b ? "A" : "40";
+      return b > a ? "A" : "40";
+    }
+
+    const labels = ["0","15","30","40","A"];
+    return team === "A" ? labels[a] : labels[b];
+  }
+
+  function toggleMode(){
+    saveHistory();
+    state.mode = state.mode === "golden" ? "normal" : "golden";
+    state.pointA = 0;
+    state.pointB = 0;
+    vibrate(35);
+    render();
+  }
+
+  function toggleLock(){
+    state.locked = !state.locked;
+    vibrate(35);
+    render();
+  }
+
+  function doReset(){
+    saveHistory();
+    state.pointA = 0;
+    state.pointB = 0;
+    state.sets = [
+      { a: 0, b: 0 },
+      { a: 0, b: 0 },
+      { a: 0, b: 0 }
+    ];
+    state.currentSet = 0;
+    vibrate(50);
+    render();
+  }
+
+  function doUndo(){
+    if (history.length === 0) return;
+    state = history.pop();
+    vibrate(40);
+    render();
+  }
+
+  function render(){
+    scoreAEl.textContent = getDisplayScore("A");
+    scoreBEl.textContent = getDisplayScore("B");
+
+    setEls.a1.textContent = state.sets[0].a;
+    setEls.a2.textContent = state.sets[1].a;
+    setEls.a3.textContent = state.sets[2].a;
+    setEls.b1.textContent = state.sets[0].b;
+    setEls.b2.textContent = state.sets[1].b;
+    setEls.b3.textContent = state.sets[2].b;
+
+    setLabel.textContent = "SET " + (state.currentSet + 1);
+    modeBtn.textContent = state.mode === "golden" ? "G" : "N";
+    modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
+
+    if (state.locked){
+      lockBtn.classList.add("locked");
+      scoreAEl.classList.add("disabled");
+      scoreBEl.classList.add("disabled");
+    } else {
+      lockBtn.classList.remove("locked");
+      scoreAEl.classList.remove("disabled");
+      scoreBEl.classList.remove("disabled");
+    }
+  }
+
+  bindTap(scoreAEl, incrementA);
+  bindTap(scoreBEl, incrementB);
+  bindTap(modeBtn, toggleMode);
+  bindTap(lockBtn, toggleLock);
+
+  resetBtn.addEventListener("touchstart", function(e){
+    e.preventDefault();
+    resetBtn.classList.add("holding");
+    resetTimer = setTimeout(doReset, 800);
+  }, { passive:false });
+
+  resetBtn.addEventListener("touchend", function(){
+    clearTimeout(resetTimer);
+    resetBtn.classList.remove("holding");
+  });
+
+  resetBtn.addEventListener("touchcancel", function(){
+    clearTimeout(resetTimer);
+    resetBtn.classList.remove("holding");
+  });
+
+  undoBtn.addEventListener("touchstart", function(e){
+    e.preventDefault();
+    undoBtn.classList.add("holding");
+    undoTimer = setTimeout(doUndo, 600);
+  }, { passive:false });
+
+  undoBtn.addEventListener("touchend", function(){
+    clearTimeout(undoTimer);
+    undoBtn.classList.remove("holding");
+  });
+
+  undoBtn.addEventListener("touchcancel", function(){
+    clearTimeout(undoTimer);
+    undoBtn.classList.remove("holding");
+  });
+
+  bindTap(undoBtn, doUndo);
+
+  render();
 </script>
-
 </body>
 </html>
