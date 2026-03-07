@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PadelTap</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>PadelTap Final</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -13,7 +13,7 @@
     --blueBorder:#2c7aa8;
     --text:#f3f8ff;
     --textDark:#123047;
-    --grid:rgba(255,255,255,0.5);
+    --grid:rgba(255,255,255,0.45);
     --lock:#9b2b2b;
     --lockBorder:#6f1717;
   }
@@ -45,7 +45,7 @@
   .mode{
     position:absolute;
     top:4%;
-    left:40%;
+    left:33%;
     width:60px;
     height:30px;
     border-radius:16px;
@@ -54,14 +54,14 @@
     justify-content:center;
     font-weight:bold;
     color:white;
-    background:rgba(255,255,255,0.18);
-    border:2px solid rgba(255,255,255,0.28);
+    background:rgba(255,255,255,.18);
+    border:2px solid rgba(255,255,255,.28);
   }
 
   .modeLabel{
     position:absolute;
     top:10%;
-    left:36%;
+    left:29%;
     font-size:11px;
     color:white;
     font-weight:bold;
@@ -70,9 +70,9 @@
   .lock{
     position:absolute;
     top:4%;
-    left:63%;
-    width:48px;
-    height:48px;
+    left:54%;
+    width:50px;
+    height:50px;
     border-radius:50%;
     display:flex;
     align-items:center;
@@ -91,7 +91,7 @@
 
   .setLabel{
     position:absolute;
-    left:8%;
+    left:9%;
     top:18%;
     font-weight:bold;
     color:white;
@@ -100,7 +100,7 @@
 
   .sets{
     position:absolute;
-    left:8%;
+    left:9%;
     top:26%;
     width:35%;
     color:white;
@@ -146,27 +146,27 @@
   }
 
   .scoreA{
-    top:22%;
+    top:20%;
     left:58%;
     background:var(--yellow);
     box-shadow:0 0 0 5px white;
   }
 
   .scoreB{
-    top:56%;
+    top:54%;
     left:58%;
     background:var(--grey);
   }
 
   .disabled{
-    opacity:0.72;
+    opacity:.72;
     filter:grayscale(0.08);
   }
 
   .reset{
     position:absolute;
-    left:12%;
-    top:72%;
+    left:13%;
+    top:68%;
     width:60px;
     height:60px;
     border-radius:50%;
@@ -182,8 +182,8 @@
 
   .undo{
     position:absolute;
-    left:30%;
-    top:72%;
+    left:44%;
+    top:82%;
     width:60px;
     height:60px;
     border-radius:50%;
@@ -195,6 +195,7 @@
     color:white;
     font-size:22px;
     font-weight:bold;
+    transform:translateX(-50%);
   }
 
   .holding{
@@ -480,14 +481,14 @@
       { a: 0, b: 0 }
     ];
     state.currentSet = 0;
-    vibrate(50);
+    vibrate(60);
     render();
   }
 
   function doUndo(){
     if (history.length === 0) return;
     state = history.pop();
-    vibrate(40);
+    vibrate(45);
     render();
   }
 
