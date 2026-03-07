@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PadelTap Watch Layout V9</title>
+<title>PadelTap Watch Layout V10</title>
 <style>
 :root{
   --bg:#123cbe;
@@ -27,6 +27,7 @@ html,body{
   margin:0;
   width:100%;
   height:100%;
+  overflow:hidden;
   background:#d7d7d7;
   font-family:Arial,Helvetica,sans-serif;
 }
@@ -36,15 +37,17 @@ body{
   justify-content:center;
 }
 .shell{
-  width:450px;
-  height:450px;
+  width:100vmin;
+  height:100vmin;
+  max-width:450px;
+  max-height:450px;
   border-radius:50%;
   background:#232323;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:10px;
-  box-shadow:0 12px 30px rgba(0,0,0,.24);
+  overflow:hidden;
 }
 .watch{
   position:relative;
@@ -55,17 +58,15 @@ body{
   background:var(--bg);
   border:3px solid #081320;
 }
-
-/* Safer inner area based on real watch photo */
 .safe{
   position:absolute;
-  left:34px;
-  top:34px;
-  width:342px;
-  height:342px;
+  left:8%;
+  top:8%;
+  width:84%;
+  height:84%;
   border-radius:50%;
+  overflow:hidden;
 }
-
 .btn{
   display:flex;
   align-items:center;
@@ -78,45 +79,49 @@ body{
   position:absolute;
   z-index:20;
 }
-
 .mode{
-  width:50px;
-  height:28px;
-  border-radius:15px;
+  width:13%;
+  min-width:44px;
+  max-width:52px;
+  height:7%;
+  min-height:24px;
+  max-height:28px;
+  border-radius:14px;
   font-size:13px;
-  left:150px;
-  top:2px;
+  left:42%;
+  top:1%;
   background:rgba(255,255,255,.14);
   border:2px solid rgba(255,255,255,.20);
   color:var(--text);
 }
-
 .modeLabel{
   position:absolute;
-  left:132px;
-  top:34px;
+  left:38%;
+  top:9.5%;
   color:var(--text);
   font-size:11px;
   font-weight:bold;
   z-index:20;
 }
-
 .lock{
-  width:44px;
-  height:44px;
-  left:214px;
-  top:0px;
-  font-size:18px;
+  width:12%;
+  min-width:40px;
+  max-width:44px;
+  height:12%;
+  min-height:40px;
+  max-height:44px;
+  left:60%;
+  top:0%;
+  font-size:17px;
 }
 .lock.locked{
   background:var(--lock);
   border-color:var(--lockBorder);
 }
-
 .lockBadge{
   position:absolute;
-  left:262px;
-  top:36px;
+  left:74%;
+  top:10%;
   color:#ffd0d0;
   font-size:10px;
   font-weight:bold;
@@ -125,17 +130,28 @@ body{
 }
 .lockBadge.visible{opacity:1;}
 
+/* SET 1 moved above table */
+.setLabel{
+  position:absolute;
+  left:2%;
+  top:12%;
+  color:var(--text);
+  font-size:12px;
+  font-weight:bold;
+  letter-spacing:.6px;
+  z-index:10;
+}
 .sets{
   position:absolute;
-  left:0px;
-  top:66px;
-  width:126px;
+  left:0%;
+  top:20%;
+  width:42%;
   color:var(--text);
   z-index:5;
 }
 .row{
   display:grid;
-  grid-template-columns:repeat(3,42px);
+  grid-template-columns:repeat(3,1fr);
 }
 .cell{
   height:34px;
@@ -151,21 +167,10 @@ body{
 .row:not(:last-child) .cell{border-bottom:1px solid var(--grid);}
 .row .cell:not(:last-child){border-right:1px solid var(--grid);}
 
-.setLabel{
-  position:absolute;
-  left:140px;
-  top:156px;
-  color:var(--text);
-  font-size:12px;
-  font-weight:bold;
-  letter-spacing:.6px;
-  z-index:10;
-}
-
 .score{
   position:absolute;
-  width:96px;
-  height:96px;
+  width:30%;
+  aspect-ratio:1 / 1;
   border-radius:50%;
   display:flex;
   align-items:center;
@@ -178,13 +183,15 @@ body{
   z-index:15;
 }
 .scoreA{
-  left:228px;
-  top:72px;
+  left:68%;
+  top:18%;
+  transform:translateX(-50%);
   background:var(--yellow);
 }
 .scoreB{
-  left:228px;
-  top:186px;
+  left:68%;
+  top:53%;
+  transform:translateX(-50%);
   background:var(--grey);
 }
 .owner::before{
@@ -207,17 +214,18 @@ body{
 }
 
 .reset{
-  width:52px;
-  height:52px;
-  left:34px;
-  top:234px;
+  width:15%;
+  aspect-ratio:1 / 1;
+  left:8%;
+  top:70%;
   font-size:20px;
 }
 .undo{
-  width:52px;
-  height:52px;
-  left:150px;
-  top:286px;
+  width:15%;
+  aspect-ratio:1 / 1;
+  left:42%;
+  top:84%;
+  transform:translate(-50%,-50%);
   font-size:20px;
 }
 .reset.holding{
@@ -234,6 +242,8 @@ body{
       <div class="modeLabel" id="modeLabel">G - Golden</div>
       <div class="btn lock" id="lockBtn">L</div>
       <div class="lockBadge" id="lockBadge">LOCKED</div>
+
+      <div class="setLabel" id="setLabel">SET 1</div>
 
       <div class="sets">
         <div class="row">
@@ -252,8 +262,6 @@ body{
           <div class="cell" id="setB3">0</div>
         </div>
       </div>
-
-      <div class="setLabel" id="setLabel">SET 1</div>
 
       <div class="score scoreA owner" id="scoreA">0</div>
       <div class="score scoreB" id="scoreB">0</div>
@@ -314,28 +322,23 @@ function bindTap(el, fn){
 }
 
 function cloneState(s){ return JSON.parse(JSON.stringify(s)); }
-
 function saveHistory(){
   history.push(cloneState(state));
   if(history.length > 100) history.shift();
 }
-
 function isDeuceState(){
   return state.pointA >= 3 && state.pointB >= 3;
 }
-
 function currentSetFinished(setObj){
   const a = setObj.a, b = setObj.b;
   return (a >= 6 || b >= 6) && Math.abs(a - b) >= 2;
 }
-
 function advanceSetIfNeeded(){
   const setObj = state.sets[state.currentSet];
   if(currentSetFinished(setObj) && state.currentSet < 2){
     state.currentSet += 1;
   }
 }
-
 function winGame(team){
   const setObj = state.sets[state.currentSet];
   if(team === "A") setObj.a += 1;
@@ -344,19 +347,16 @@ function winGame(team){
   state.pointB = 0;
   advanceSetIfNeeded();
 }
-
 function incrementAGolden(){
   if(state.pointA <= 2){ state.pointA += 1; return; }
   if(state.pointA === 3 && state.pointB < 3){ winGame("A"); return; }
   if(state.pointA === 3 && state.pointB === 3){ winGame("A"); }
 }
-
 function incrementBGolden(){
   if(state.pointB <= 2){ state.pointB += 1; return; }
   if(state.pointB === 3 && state.pointA < 3){ winGame("B"); return; }
   if(state.pointA === 3 && state.pointB === 3){ winGame("B"); }
 }
-
 function incrementANormal(){
   if(!isDeuceState()){
     if(state.pointA <= 2){ state.pointA += 1; return; }
@@ -368,7 +368,6 @@ function incrementANormal(){
     else { state.pointA = 3; state.pointB = 3; }
   }
 }
-
 function incrementBNormal(){
   if(!isDeuceState()){
     if(state.pointB <= 2){ state.pointB += 1; return; }
@@ -380,7 +379,6 @@ function incrementBNormal(){
     else { state.pointA = 3; state.pointB = 3; }
   }
 }
-
 function incrementA(){
   if(state.locked) return;
   saveHistory();
@@ -388,7 +386,6 @@ function incrementA(){
   else incrementANormal();
   render();
 }
-
 function incrementB(){
   if(state.locked) return;
   saveHistory();
@@ -396,7 +393,6 @@ function incrementB(){
   else incrementBNormal();
   render();
 }
-
 function getDisplayScore(team){
   const a = state.pointA, b = state.pointB;
   if(state.mode === "golden"){
@@ -411,7 +407,6 @@ function getDisplayScore(team){
   const labels = ["0","15","30","40","A"];
   return team === "A" ? labels[a] : labels[b];
 }
-
 function resetAll(){
   saveHistory();
   state = {
@@ -424,18 +419,15 @@ function resetAll(){
   };
   render();
 }
-
 function undo(){
   if(history.length === 0) return;
   state = history.pop();
   render();
 }
-
 function toggleLock(){
   state.locked = !state.locked;
   render();
 }
-
 function toggleMode(){
   saveHistory();
   state.mode = state.mode === "golden" ? "normal" : "golden";
@@ -443,7 +435,6 @@ function toggleMode(){
   state.pointB = 0;
   render();
 }
-
 function startResetHold(){
   resetBtn.classList.add("holding");
   resetPressTimer = setTimeout(() => {
@@ -451,12 +442,10 @@ function startResetHold(){
     resetAll();
   }, 900);
 }
-
 function cancelResetHold(){
   clearTimeout(resetPressTimer);
   resetBtn.classList.remove("holding");
 }
-
 function render(){
   scoreA.textContent = getDisplayScore("A");
   scoreB.textContent = getDisplayScore("B");
