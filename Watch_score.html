@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PadelTap Watch Layout V10</title>
+<title>PadelTap Watch Layout V12</title>
 <style>
 :root{
   --bg:#123cbe;
@@ -14,15 +15,15 @@
   --grid:rgba(234,244,255,0.52);
   --text:#f3f8ff;
   --textDark:#123047;
-  --lock:#9b2b2b;
-  --lockBorder:#6f1717;
 }
+
 *{
   box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
   user-select:none;
 }
+
 html,body{
   margin:0;
   width:100%;
@@ -31,11 +32,13 @@ html,body{
   background:#d7d7d7;
   font-family:Arial,Helvetica,sans-serif;
 }
+
 body{
   display:flex;
   align-items:center;
   justify-content:center;
 }
+
 .shell{
   width:100vmin;
   height:100vmin;
@@ -47,8 +50,8 @@ body{
   align-items:center;
   justify-content:center;
   padding:10px;
-  overflow:hidden;
 }
+
 .watch{
   position:relative;
   width:100%;
@@ -58,15 +61,17 @@ body{
   background:var(--bg);
   border:3px solid #081320;
 }
+
+/* safe area pushed slightly inward */
 .safe{
   position:absolute;
-  left:8%;
-  top:8%;
-  width:84%;
-  height:84%;
+  left:12%;
+  top:12%;
+  width:76%;
+  height:76%;
   border-radius:50%;
-  overflow:hidden;
 }
+
 .btn{
   display:flex;
   align-items:center;
@@ -77,423 +82,160 @@ body{
   border:2px solid var(--blueBorder);
   border-radius:50%;
   position:absolute;
-  z-index:20;
 }
+
+/* top buttons moved inward */
 .mode{
-  width:13%;
-  min-width:44px;
-  max-width:52px;
-  height:7%;
-  min-height:24px;
-  max-height:28px;
-  border-radius:14px;
-  font-size:13px;
-  left:42%;
-  top:1%;
+  width:54px;
+  height:30px;
+  border-radius:16px;
+  font-size:14px;
+  left:40%;
+  top:2%;
   background:rgba(255,255,255,.14);
   border:2px solid rgba(255,255,255,.20);
-  color:var(--text);
 }
+
+.lock{
+  width:48px;
+  height:48px;
+  left:56%;
+  top:2%;
+  font-size:18px;
+}
+
 .modeLabel{
   position:absolute;
   left:38%;
-  top:9.5%;
+  top:11%;
   color:var(--text);
   font-size:11px;
   font-weight:bold;
-  z-index:20;
 }
-.lock{
-  width:12%;
-  min-width:40px;
-  max-width:44px;
-  height:12%;
-  min-height:40px;
-  max-height:44px;
-  left:60%;
-  top:0%;
-  font-size:17px;
-}
-.lock.locked{
-  background:var(--lock);
-  border-color:var(--lockBorder);
-}
-.lockBadge{
-  position:absolute;
-  left:74%;
-  top:10%;
-  color:#ffd0d0;
-  font-size:10px;
-  font-weight:bold;
-  opacity:0;
-  z-index:20;
-}
-.lockBadge.visible{opacity:1;}
 
-/* SET 1 moved above table */
 .setLabel{
   position:absolute;
-  left:2%;
-  top:12%;
+  left:4%;
+  top:16%;
   color:var(--text);
-  font-size:12px;
+  font-size:13px;
   font-weight:bold;
-  letter-spacing:.6px;
-  z-index:10;
 }
+
 .sets{
   position:absolute;
-  left:0%;
-  top:20%;
-  width:42%;
+  left:2%;
+  top:24%;
+  width:44%;
   color:var(--text);
-  z-index:5;
 }
+
 .row{
   display:grid;
   grid-template-columns:repeat(3,1fr);
 }
+
 .cell{
-  height:34px;
+  height:38px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:18px;
+  font-size:20px;
 }
+
 .head{
-  font-size:14px;
+  font-size:15px;
   font-weight:bold;
 }
+
 .row:not(:last-child) .cell{border-bottom:1px solid var(--grid);}
 .row .cell:not(:last-child){border-right:1px solid var(--grid);}
 
+/* score buttons slightly centered */
 .score{
   position:absolute;
-  width:30%;
-  aspect-ratio:1 / 1;
+  width:34%;
+  aspect-ratio:1/1;
   border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:30px;
+  font-size:36px;
   font-weight:bold;
   color:var(--textDark);
-  border:2px solid rgba(255,255,255,.18);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.18);
-  z-index:15;
 }
+
 .scoreA{
-  left:68%;
-  top:18%;
+  left:60%;
+  top:22%;
   transform:translateX(-50%);
   background:var(--yellow);
 }
+
 .scoreB{
-  left:68%;
-  top:53%;
+  left:60%;
+  top:58%;
   transform:translateX(-50%);
   background:var(--grey);
 }
-.owner::before{
-  content:"";
-  position:absolute;
-  inset:-7px;
-  border-radius:50%;
-  border:4px solid rgba(255,255,255,.96);
-}
-.score.disabled{
-  opacity:.78;
-  filter:grayscale(.1);
-}
-.score.disabled::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:50%;
-  background:rgba(10,23,41,.22);
+
+/* bottom buttons moved inward */
+.reset{
+  width:60px;
+  height:60px;
+  left:12%;
+  top:70%;
+  font-size:22px;
 }
 
-.reset{
-  width:15%;
-  aspect-ratio:1 / 1;
-  left:8%;
-  top:70%;
-  font-size:20px;
-}
 .undo{
-  width:15%;
-  aspect-ratio:1 / 1;
+  width:60px;
+  height:60px;
   left:42%;
   top:84%;
   transform:translate(-50%,-50%);
-  font-size:20px;
-}
-.reset.holding{
-  background:var(--lock);
-  border-color:var(--lockBorder);
+  font-size:22px;
 }
 </style>
 </head>
+
 <body>
 <div class="shell">
-  <div class="watch">
-    <div class="safe">
-      <div class="btn mode" id="modeBtn">G</div>
-      <div class="modeLabel" id="modeLabel">G - Golden</div>
-      <div class="btn lock" id="lockBtn">L</div>
-      <div class="lockBadge" id="lockBadge">LOCKED</div>
+<div class="watch">
+<div class="safe">
 
-      <div class="setLabel" id="setLabel">SET 1</div>
+<div class="btn mode">G</div>
+<div class="btn lock">L</div>
+<div class="modeLabel">G - Golden</div>
 
-      <div class="sets">
-        <div class="row">
-          <div class="cell head">1</div>
-          <div class="cell head">2</div>
-          <div class="cell head">3</div>
-        </div>
-        <div class="row">
-          <div class="cell" id="setA1">0</div>
-          <div class="cell" id="setA2">0</div>
-          <div class="cell" id="setA3">0</div>
-        </div>
-        <div class="row">
-          <div class="cell" id="setB1">0</div>
-          <div class="cell" id="setB2">0</div>
-          <div class="cell" id="setB3">0</div>
-        </div>
-      </div>
+<div class="setLabel">SET 1</div>
 
-      <div class="score scoreA owner" id="scoreA">0</div>
-      <div class="score scoreB" id="scoreB">0</div>
-
-      <div class="btn reset" id="resetBtn">R</div>
-      <div class="btn undo" id="undoBtn">U</div>
-    </div>
-  </div>
+<div class="sets">
+<div class="row">
+<div class="cell head">1</div>
+<div class="cell head">2</div>
+<div class="cell head">3</div>
+</div>
+<div class="row">
+<div class="cell">0</div>
+<div class="cell">0</div>
+<div class="cell">0</div>
+</div>
+<div class="row">
+<div class="cell">0</div>
+<div class="cell">0</div>
+<div class="cell">0</div>
+</div>
 </div>
 
-<script>
-let state = {
-  pointA: 0,
-  pointB: 0,
-  sets: [{a:0,b:0},{a:0,b:0},{a:0,b:0}],
-  currentSet: 0,
-  locked: false,
-  mode: "golden"
-};
+<div class="score scoreA">0</div>
+<div class="score scoreB">0</div>
 
-const history = [];
-let resetPressTimer = null;
+<div class="btn reset">R</div>
+<div class="btn undo">U</div>
 
-const scoreA = document.getElementById("scoreA");
-const scoreB = document.getElementById("scoreB");
-const resetBtn = document.getElementById("resetBtn");
-const undoBtn = document.getElementById("undoBtn");
-const lockBtn = document.getElementById("lockBtn");
-const modeBtn = document.getElementById("modeBtn");
-const modeLabel = document.getElementById("modeLabel");
-const setLabel = document.getElementById("setLabel");
-const lockBadge = document.getElementById("lockBadge");
-
-const setEls = {
-  a1: document.getElementById("setA1"),
-  a2: document.getElementById("setA2"),
-  a3: document.getElementById("setA3"),
-  b1: document.getElementById("setB1"),
-  b2: document.getElementById("setB2"),
-  b3: document.getElementById("setB3")
-};
-
-function bindTap(el, fn){
-  let touched = false;
-  el.addEventListener("touchstart", e => {
-    touched = true;
-    e.preventDefault();
-    fn();
-  }, {passive:false});
-  el.addEventListener("click", e => {
-    if (touched){
-      touched = false;
-      return;
-    }
-    e.preventDefault();
-    fn();
-  });
-}
-
-function cloneState(s){ return JSON.parse(JSON.stringify(s)); }
-function saveHistory(){
-  history.push(cloneState(state));
-  if(history.length > 100) history.shift();
-}
-function isDeuceState(){
-  return state.pointA >= 3 && state.pointB >= 3;
-}
-function currentSetFinished(setObj){
-  const a = setObj.a, b = setObj.b;
-  return (a >= 6 || b >= 6) && Math.abs(a - b) >= 2;
-}
-function advanceSetIfNeeded(){
-  const setObj = state.sets[state.currentSet];
-  if(currentSetFinished(setObj) && state.currentSet < 2){
-    state.currentSet += 1;
-  }
-}
-function winGame(team){
-  const setObj = state.sets[state.currentSet];
-  if(team === "A") setObj.a += 1;
-  else setObj.b += 1;
-  state.pointA = 0;
-  state.pointB = 0;
-  advanceSetIfNeeded();
-}
-function incrementAGolden(){
-  if(state.pointA <= 2){ state.pointA += 1; return; }
-  if(state.pointA === 3 && state.pointB < 3){ winGame("A"); return; }
-  if(state.pointA === 3 && state.pointB === 3){ winGame("A"); }
-}
-function incrementBGolden(){
-  if(state.pointB <= 2){ state.pointB += 1; return; }
-  if(state.pointB === 3 && state.pointA < 3){ winGame("B"); return; }
-  if(state.pointA === 3 && state.pointB === 3){ winGame("B"); }
-}
-function incrementANormal(){
-  if(!isDeuceState()){
-    if(state.pointA <= 2){ state.pointA += 1; return; }
-    if(state.pointA === 3 && state.pointB < 3){ winGame("A"); return; }
-    if(state.pointA === 3 && state.pointB === 3){ state.pointA = 4; return; }
-  } else {
-    if(state.pointA === state.pointB) state.pointA += 1;
-    else if(state.pointA > state.pointB) winGame("A");
-    else { state.pointA = 3; state.pointB = 3; }
-  }
-}
-function incrementBNormal(){
-  if(!isDeuceState()){
-    if(state.pointB <= 2){ state.pointB += 1; return; }
-    if(state.pointB === 3 && state.pointA < 3){ winGame("B"); return; }
-    if(state.pointA === 3 && state.pointB === 3){ state.pointB = 4; return; }
-  } else {
-    if(state.pointA === state.pointB) state.pointB += 1;
-    else if(state.pointB > state.pointA) winGame("B");
-    else { state.pointA = 3; state.pointB = 3; }
-  }
-}
-function incrementA(){
-  if(state.locked) return;
-  saveHistory();
-  if(state.mode === "golden") incrementAGolden();
-  else incrementANormal();
-  render();
-}
-function incrementB(){
-  if(state.locked) return;
-  saveHistory();
-  if(state.mode === "golden") incrementBGolden();
-  else incrementBNormal();
-  render();
-}
-function getDisplayScore(team){
-  const a = state.pointA, b = state.pointB;
-  if(state.mode === "golden"){
-    const labels = ["0","15","30","40"];
-    return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
-  }
-  if(a >= 3 && b >= 3){
-    if(a === b) return "D";
-    if(team === "A") return a > b ? "A" : "40";
-    return b > a ? "A" : "40";
-  }
-  const labels = ["0","15","30","40","A"];
-  return team === "A" ? labels[a] : labels[b];
-}
-function resetAll(){
-  saveHistory();
-  state = {
-    pointA: 0,
-    pointB: 0,
-    sets: [{a:0,b:0},{a:0,b:0},{a:0,b:0}],
-    currentSet: 0,
-    locked: false,
-    mode: state.mode
-  };
-  render();
-}
-function undo(){
-  if(history.length === 0) return;
-  state = history.pop();
-  render();
-}
-function toggleLock(){
-  state.locked = !state.locked;
-  render();
-}
-function toggleMode(){
-  saveHistory();
-  state.mode = state.mode === "golden" ? "normal" : "golden";
-  state.pointA = 0;
-  state.pointB = 0;
-  render();
-}
-function startResetHold(){
-  resetBtn.classList.add("holding");
-  resetPressTimer = setTimeout(() => {
-    cancelResetHold();
-    resetAll();
-  }, 900);
-}
-function cancelResetHold(){
-  clearTimeout(resetPressTimer);
-  resetBtn.classList.remove("holding");
-}
-function render(){
-  scoreA.textContent = getDisplayScore("A");
-  scoreB.textContent = getDisplayScore("B");
-
-  setEls.a1.textContent = state.sets[0].a;
-  setEls.a2.textContent = state.sets[1].a;
-  setEls.a3.textContent = state.sets[2].a;
-  setEls.b1.textContent = state.sets[0].b;
-  setEls.b2.textContent = state.sets[1].b;
-  setEls.b3.textContent = state.sets[2].b;
-
-  setLabel.textContent = `SET ${Math.min(state.currentSet + 1, 3)}`;
-  modeBtn.textContent = state.mode === "golden" ? "G" : "N";
-  modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
-
-  if(state.locked){
-    lockBtn.classList.add("locked");
-    lockBadge.classList.add("visible");
-    scoreA.classList.add("disabled");
-    scoreB.classList.add("disabled");
-  } else {
-    lockBtn.classList.remove("locked");
-    lockBadge.classList.remove("visible");
-    scoreA.classList.remove("disabled");
-    scoreB.classList.remove("disabled");
-  }
-}
-
-bindTap(scoreA, incrementA);
-bindTap(scoreB, incrementB);
-bindTap(undoBtn, undo);
-bindTap(lockBtn, toggleLock);
-bindTap(modeBtn, toggleMode);
-
-resetBtn.addEventListener("mousedown", startResetHold);
-resetBtn.addEventListener("mouseup", cancelResetHold);
-resetBtn.addEventListener("mouseleave", cancelResetHold);
-resetBtn.addEventListener("touchstart", function(e){
-  e.preventDefault();
-  startResetHold();
-}, {passive:false});
-resetBtn.addEventListener("touchend", function(e){
-  e.preventDefault();
-  cancelResetHold();
-}, {passive:false});
-resetBtn.addEventListener("touchcancel", cancelResetHold);
-
-render();
-</script>
+</div>
+</div>
+</div>
 </body>
 </html>
