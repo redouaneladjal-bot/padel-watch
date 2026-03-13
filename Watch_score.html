@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V19</title>
+<title>PadelTap V20</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -16,6 +16,8 @@
     --grid:rgba(255,255,255,0.45);
     --lock:#9b2b2b;
     --lockBorder:#6f1717;
+    --glass:rgba(255,255,255,.18);
+    --glassBorder:rgba(255,255,255,.28);
   }
 
   html,body{
@@ -42,20 +44,35 @@
     overflow:hidden;
   }
 
-  .mode{
+  .pill{
     position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-weight:bold;
+    background:var(--glass);
+    border:2px solid var(--glassBorder);
+    border-radius:16px;
+  }
+
+  .circle-btn{
+    position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-weight:bold;
+    background:var(--blue);
+    border:2px solid var(--blueBorder);
+    border-radius:50%;
+  }
+
+  .mode{
     top:4%;
     left:28%;
     width:60px;
     height:30px;
-    border-radius:16px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    background:rgba(255,255,255,.18);
-    border:2px solid rgba(255,255,255,.28);
     font-size:14px;
   }
 
@@ -69,19 +86,10 @@
   }
 
   .lock{
-    position:absolute;
     top:4%;
     left:48%;
     width:50px;
     height:50px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--blue);
-    border:2px solid var(--blueBorder);
-    color:white;
-    font-weight:bold;
     font-size:18px;
   }
 
@@ -90,37 +98,20 @@
     border-color:var(--lockBorder);
   }
 
-  .audioBtn{
-    position:absolute;
+  .audio{
     top:4%;
     left:64%;
-    width:86px;
+    width:42px;
     height:30px;
     border-radius:16px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    background:rgba(255,255,255,.18);
-    border:2px solid rgba(255,255,255,.28);
-    font-size:12px;
+    font-size:14px;
   }
 
-  .serverBtn{
-    position:absolute;
+  .server{
     top:67%;
     left:34%;
-    width:78px;
+    width:82px;
     height:30px;
-    border-radius:16px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    background:rgba(255,255,255,.18);
-    border:2px solid rgba(255,255,255,.28);
     font-size:12px;
   }
 
@@ -199,37 +190,19 @@
   }
 
   .reset{
-    position:absolute;
-    left:13%;
     top:66%;
+    left:13%;
     width:60px;
     height:60px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--blue);
-    border:2px solid var(--blueBorder);
-    color:white;
     font-size:22px;
-    font-weight:bold;
   }
 
   .undo{
-    position:absolute;
-    left:44%;
     top:80%;
+    left:44%;
     width:60px;
     height:60px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--blue);
-    border:2px solid var(--blueBorder);
-    color:white;
     font-size:22px;
-    font-weight:bold;
     transform:translateX(-50%);
   }
 
@@ -242,12 +215,13 @@
 <body>
 
 <div id="app">
-  <div class="mode" id="modeBtn">G</div>
+  <div class="pill mode" id="modeBtn">G</div>
   <div class="modeLabel" id="modeLabel">G - Golden</div>
-  <div class="lock" id="lockBtn">L</div>
 
-  <div class="audioBtn" id="audioBtn">Audio ON</div>
-  <div class="serverBtn" id="serverBtn">Srv A</div>
+  <div class="circle-btn lock" id="lockBtn">L</div>
+  <div class="pill audio" id="audioBtn">A</div>
+
+  <div class="pill server" id="serverBtn">Srv A</div>
 
   <div class="setLabel" id="setLabel">SET 1</div>
 
@@ -272,12 +246,13 @@
   <div class="score scoreA" id="scoreA">0</div>
   <div class="score scoreB" id="scoreB">0</div>
 
-  <div class="reset" id="resetBtn">R</div>
-  <div class="undo" id="undoBtn">U</div>
+  <div class="circle-btn reset" id="resetBtn">R</div>
+  <div class="circle-btn undo" id="undoBtn">U</div>
 </div>
 
 <script>
-  let state = {
+(function () {
+  const state = {
     pointA: 0,
     pointB: 0,
     sets: [
@@ -297,65 +272,64 @@
   let resetTimer = null;
   let undoTimer = null;
 
-  const scoreAEl = document.getElementById("scoreA");
-  const scoreBEl = document.getElementById("scoreB");
-  const modeBtn = document.getElementById("modeBtn");
-  const modeLabel = document.getElementById("modeLabel");
-  const lockBtn = document.getElementById("lockBtn");
-  const resetBtn = document.getElementById("resetBtn");
-  const undoBtn = document.getElementById("undoBtn");
-  const setLabel = document.getElementById("setLabel");
-  const audioBtn = document.getElementById("audioBtn");
-  const serverBtn = document.getElementById("serverBtn");
-
-  const setEls = {
-    a1: document.getElementById("setA1"),
-    a2: document.getElementById("setA2"),
-    a3: document.getElementById("setA3"),
-    b1: document.getElementById("setB1"),
-    b2: document.getElementById("setB2"),
-    b3: document.getElementById("setB3")
+  const els = {
+    scoreA: document.getElementById("scoreA"),
+    scoreB: document.getElementById("scoreB"),
+    modeBtn: document.getElementById("modeBtn"),
+    modeLabel: document.getElementById("modeLabel"),
+    lockBtn: document.getElementById("lockBtn"),
+    audioBtn: document.getElementById("audioBtn"),
+    serverBtn: document.getElementById("serverBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    undoBtn: document.getElementById("undoBtn"),
+    setLabel: document.getElementById("setLabel"),
+    setA1: document.getElementById("setA1"),
+    setA2: document.getElementById("setA2"),
+    setA3: document.getElementById("setA3"),
+    setB1: document.getElementById("setB1"),
+    setB2: document.getElementById("setB2"),
+    setB3: document.getElementById("setB3")
   };
 
-  function vibrate(ms){
+  function vibrate(pattern) {
     try {
-      if (navigator.vibrate) navigator.vibrate(ms || 30);
-    } catch (e) {}
+      if (navigator.vibrate) navigator.vibrate(pattern || 30);
+    } catch (_) {}
   }
 
-  function speak(text){
+  function speak(text) {
     if (!state.audioEnabled) return;
-    try{
+    try {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "en-US";
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
+      utter.rate = 1;
+      utter.pitch = 1;
       speechSynthesis.speak(utter);
-    } catch(e){}
+    } catch (_) {}
   }
 
-  function cloneState(obj){
-    return JSON.parse(JSON.stringify(obj));
+  function cloneState() {
+    return JSON.parse(JSON.stringify(state));
   }
 
-  function saveHistory(){
-    history.push(cloneState(state));
+  function saveHistory() {
+    history.push(cloneState());
     if (history.length > 100) history.shift();
   }
 
-  function bindTap(el, handler){
+  function bindTap(el, handler) {
     let touched = false;
 
-    el.addEventListener("touchstart", function(e){
+    el.addEventListener("touchstart", function (e) {
       touched = true;
       e.preventDefault();
       handler();
-    }, { passive:false });
+    }, { passive: false });
 
-    el.addEventListener("click", function(e){
-      if (touched){
+    el.addEventListener("click", function (e) {
+      if (touched) {
         touched = false;
         return;
       }
@@ -364,115 +338,116 @@
     });
   }
 
-  function isDeuceState(){
-    return state.pointA >= 3 && state.pointB >= 3;
-  }
-
-  function currentSetFinished(setObj){
-    const a = setObj.a;
-    const b = setObj.b;
-    return (a >= 6 || b >= 6) && Math.abs(a - b) >= 2;
-  }
-
-  function advanceSetIfNeeded(){
-    const current = state.sets[state.currentSet];
-    if (!currentSetFinished(current)) return;
-
-    if (state.currentSet < 2){
-      state.currentSet += 1;
-    } else {
-      state.matchFinished = true;
-    }
-  }
-
-  function tennisWord(v){
+  function tennisWord(v) {
     if (v === 0) return "love";
     if (v === 1) return "15";
     if (v === 2) return "30";
     return "40";
   }
 
-  function currentGames(){
-    return {
-      a: state.sets[state.currentSet].a,
-      b: state.sets[state.currentSet].b
-    };
-  }
-
-  function setOrdinal(index){
+  function setOrdinal(index) {
     if (index === 0) return "first";
     if (index === 1) return "second";
     return "third";
   }
 
-  function announcePoint(){
+  function isDeuceState() {
+    return state.pointA >= 3 && state.pointB >= 3;
+  }
+
+  function currentSetFinished(setObj) {
+    return (setObj.a >= 6 || setObj.b >= 6) && Math.abs(setObj.a - setObj.b) >= 2;
+  }
+
+  function getDisplayScore(team) {
+    if (state.matchFinished) return "0";
+
+    const a = state.pointA;
+    const b = state.pointB;
+
+    if (state.mode === "golden") {
+      const labels = ["0", "15", "30", "40"];
+      return team === "A" ? labels[Math.min(a, 3)] : labels[Math.min(b, 3)];
+    }
+
+    if (a >= 3 && b >= 3) {
+      if (a === b) return "D";
+      if (team === "A") return a > b ? "A" : "40";
+      return b > a ? "A" : "40";
+    }
+
+    const labels = ["0", "15", "30", "40", "A"];
+    return team === "A" ? labels[a] : labels[b];
+  }
+
+  function advanceSetIfNeeded() {
+    const current = state.sets[state.currentSet];
+    if (!currentSetFinished(current)) return;
+
+    if (state.currentSet < 2) {
+      state.currentSet += 1;
+    } else {
+      state.matchFinished = true;
+    }
+  }
+
+  function announcePoint() {
     if (state.matchFinished) return;
 
-    if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3){
-      if (state.pointA === state.pointB){
+    if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3) {
+      if (state.pointA === state.pointB) {
         speak("deuce");
         return;
       }
-
       const advTeam = state.pointA > state.pointB ? "A" : "B";
-      if (advTeam === state.server){
-        speak("advantage server");
-      } else {
-        speak("advantage receiver");
-      }
+      speak(advTeam === state.server ? "advantage server" : "advantage receiver");
       return;
     }
 
     const aText = tennisWord(state.pointA);
     const bText = tennisWord(state.pointB);
 
-    let first, second;
-    if (state.server === "A"){
-      first = aText;
-      second = bText;
-    } else {
-      first = bText;
-      second = aText;
-    }
+    const first = state.server === "A" ? aText : bText;
+    const second = state.server === "A" ? bText : aText;
 
-    if (first === second){
+    if (first === second) {
       speak(first + " all");
     } else {
       speak(first + " " + second);
     }
   }
 
-  function announceGameOrSet(team, finishedSetNow, matchFinishedNow){
-    const announcedSets = [];
-    const maxIndex = Math.min(state.currentSet, 2);
-
-    for (let i = 0; i <= maxIndex; i++){
-      announcedSets.push(state.sets[i].a + " " + state.sets[i].b);
+  function currentVisibleSetScores() {
+    const limit = Math.min(state.currentSet, 2);
+    const arr = [];
+    for (let i = 0; i <= limit; i++) {
+      arr.push(state.sets[i].a + " " + state.sets[i].b);
     }
+    return arr;
+  }
 
-    if (matchFinishedNow){
-      speak(
-        "game, " + setOrdinal(2) + " set, and match Team " + team +
-        ". Final set score " + announcedSets.join(", ")
-      );
+  function announceGameOrSet(team, finishedSetNow, matchFinishedNow, setIndexJustWon) {
+    if (matchFinishedNow) {
+      const finalScores = state.sets.map(s => s.a + " " + s.b).join(", ");
+      speak("game, third set, and match Team " + team + ". Final set score " + finalScores);
       return;
     }
 
-    if (finishedSetNow){
+    if (finishedSetNow) {
       speak(
-        "game and " + setOrdinal(state.currentSet - 1) + " set Team " + team +
-        ". Set score " + announcedSets.join(", ")
+        "game and " + setOrdinal(setIndexJustWon) + " set Team " + team +
+        ". Set score " + currentVisibleSetScores().join(", ")
       );
       return;
     }
 
     speak(
       "game Team " + team +
-      ". Set score " + announcedSets.join(", ")
+      ". Set score " + currentVisibleSetScores().join(", ")
     );
   }
 
-  function winGame(team){
+  function winGame(team) {
     if (state.matchFinished) return;
 
     const oldSetIndex = state.currentSet;
@@ -485,104 +460,99 @@
     state.pointB = 0;
 
     const setJustFinished = currentSetFinished(current);
-
     advanceSetIfNeeded();
 
-    if (state.matchFinished){
-      announceGameOrSet(team, true, true);
+    if (state.matchFinished) {
+      announceGameOrSet(team, true, true, oldSetIndex);
       return;
     }
 
-    if (setJustFinished && state.currentSet !== oldSetIndex){
-      announceGameOrSet(team, true, false);
+    if (setJustFinished && state.currentSet !== oldSetIndex) {
+      announceGameOrSet(team, true, false, oldSetIndex);
     } else {
-      announceGameOrSet(team, false, false);
+      announceGameOrSet(team, false, false, oldSetIndex);
     }
 
     state.server = state.server === "A" ? "B" : "A";
   }
 
-  function incrementAGolden(){
-    if (state.pointA <= 2){
+  function incrementAGolden() {
+    if (state.pointA <= 2) {
       state.pointA += 1;
       return;
     }
-    if (state.pointA === 3 && state.pointB < 3){
+    if (state.pointA === 3 && state.pointB < 3) {
       winGame("A");
       return;
     }
-    if (state.pointA === 3 && state.pointB === 3){
+    if (state.pointA === 3 && state.pointB === 3) {
       winGame("A");
     }
   }
 
-  function incrementBGolden(){
-    if (state.pointB <= 2){
+  function incrementBGolden() {
+    if (state.pointB <= 2) {
       state.pointB += 1;
       return;
     }
-    if (state.pointB === 3 && state.pointA < 3){
+    if (state.pointB === 3 && state.pointA < 3) {
       winGame("B");
       return;
     }
-    if (state.pointA === 3 && state.pointB === 3){
+    if (state.pointA === 3 && state.pointB === 3) {
       winGame("B");
     }
   }
 
-  function incrementANormal(){
-    if (!isDeuceState()){
-      if (state.pointA <= 2){
+  function incrementANormal() {
+    if (!isDeuceState()) {
+      if (state.pointA <= 2) {
         state.pointA += 1;
         return;
       }
-      if (state.pointA === 3 && state.pointB < 3){
+      if (state.pointA === 3 && state.pointB < 3) {
         winGame("A");
         return;
       }
-      if (state.pointA === 3 && state.pointB === 3){
+      if (state.pointA === 3 && state.pointB === 3) {
         state.pointA = 4;
         return;
       }
     } else {
-      if (state.pointA === state.pointB){
-        state.pointA += 1;
-      } else if (state.pointA > state.pointB){
-        winGame("A");
-      } else {
+      if (state.pointA === state.pointB) state.pointA += 1;
+      else if (state.pointA > state.pointB) winGame("A");
+      else {
         state.pointA = 3;
         state.pointB = 3;
       }
     }
   }
 
-  function incrementBNormal(){
-    if (!isDeuceState()){
-      if (state.pointB <= 2){
+  function incrementBNormal() {
+    if (!isDeuceState()) {
+      if (state.pointB <= 2) {
         state.pointB += 1;
         return;
       }
-      if (state.pointB === 3 && state.pointA < 3){
+      if (state.pointB === 3 && state.pointA < 3) {
         winGame("B");
         return;
       }
-      if (state.pointA === 3 && state.pointB === 3){
+      if (state.pointA === 3 && state.pointB === 3) {
         state.pointB = 4;
         return;
       }
     } else {
-      if (state.pointA === state.pointB){
-        state.pointB += 1;
-      } else if (state.pointB > state.pointA){
-        winGame("B");
-      } else {
+      if (state.pointA === state.pointB) state.pointB += 1;
+      else if (state.pointB > state.pointA) winGame("B");
+      else {
         state.pointA = 3;
         state.pointB = 3;
       }
     }
   }
 
-  function incrementA(){
+  function incrementA() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
 
@@ -594,14 +564,12 @@
     vibrate(25);
 
     const afterSets = JSON.stringify(state.sets);
-    if (beforeSets === afterSets && !state.matchFinished){
-      announcePoint();
-    }
+    if (beforeSets === afterSets && !state.matchFinished) announcePoint();
 
     render();
   }
 
-  function incrementB(){
+  function incrementB() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
 
@@ -613,37 +581,12 @@
     vibrate(25);
 
     const afterSets = JSON.stringify(state.sets);
-    if (beforeSets === afterSets && !state.matchFinished){
-      announcePoint();
-    }
+    if (beforeSets === afterSets && !state.matchFinished) announcePoint();
 
     render();
   }
 
-  function getDisplayScore(team){
-    if (state.matchFinished){
-      return "0";
-    }
-
-    const a = state.pointA;
-    const b = state.pointB;
-
-    if (state.mode === "golden"){
-      const labels = ["0","15","30","40"];
-      return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
-    }
-
-    if (a >= 3 && b >= 3){
-      if (a === b) return "D";
-      if (team === "A") return a > b ? "A" : "40";
-      return b > a ? "A" : "40";
-    }
-
-    const labels = ["0","15","30","40","A"];
-    return team === "A" ? labels[a] : labels[b];
-  }
-
-  function toggleMode(){
+  function toggleMode() {
     saveHistory();
     state.mode = state.mode === "golden" ? "normal" : "golden";
     state.pointA = 0;
@@ -653,32 +596,30 @@
     speak(state.mode === "golden" ? "golden point" : "normal mode");
   }
 
-  function toggleLock(){
+  function toggleLock() {
     state.locked = !state.locked;
     vibrate(35);
     render();
     speak(state.locked ? "locked" : "unlocked");
   }
 
-  function toggleAudio(){
+  function toggleAudio() {
     const wasEnabled = state.audioEnabled;
     state.audioEnabled = !state.audioEnabled;
     vibrate(35);
     render();
 
-    if (!wasEnabled && state.audioEnabled){
-      speak("audio on");
-    }
+    if (!wasEnabled && state.audioEnabled) speak("audio on");
   }
 
-  function toggleServer(){
+  function toggleServer() {
     state.server = state.server === "A" ? "B" : "A";
     vibrate(35);
     render();
     speak("server " + state.server);
   }
 
-  function doReset(){
+  function doReset() {
     saveHistory();
     state.pointA = 0;
     state.pointB = 0;
@@ -695,87 +636,89 @@
     speak("match reset");
   }
 
-  function doUndo(){
+  function doUndo() {
     if (history.length === 0) return;
-    state = history.pop();
+    const previousAudio = state.audioEnabled;
+    const previous = history.pop();
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, previous);
+    state.audioEnabled = previousAudio;
     vibrate([30,30]);
     render();
     speak("undo");
   }
 
-  function render(){
-    scoreAEl.textContent = getDisplayScore("A");
-    scoreBEl.textContent = getDisplayScore("B");
+  function render() {
+    els.scoreA.textContent = getDisplayScore("A");
+    els.scoreB.textContent = getDisplayScore("B");
 
-    setEls.a1.textContent = state.sets[0].a;
-    setEls.a2.textContent = state.sets[1].a;
-    setEls.a3.textContent = state.sets[2].a;
-    setEls.b1.textContent = state.sets[0].b;
-    setEls.b2.textContent = state.sets[1].b;
-    setEls.b3.textContent = state.sets[2].b;
+    els.setA1.textContent = state.sets[0].a;
+    els.setA2.textContent = state.sets[1].a;
+    els.setA3.textContent = state.sets[2].a;
+    els.setB1.textContent = state.sets[0].b;
+    els.setB2.textContent = state.sets[1].b;
+    els.setB3.textContent = state.sets[2].b;
 
-    setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 3);
-    modeBtn.textContent = state.mode === "golden" ? "G" : "N";
-    modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
-    audioBtn.textContent = state.audioEnabled ? "Audio ON" : "Audio OFF";
-    serverBtn.textContent = state.server === "A" ? "Srv A" : "Srv B";
+    els.setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 3);
+    els.modeBtn.textContent = state.mode === "golden" ? "G" : "N";
+    els.modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
+    els.audioBtn.textContent = state.audioEnabled ? "A" : "M";
+    els.serverBtn.textContent = state.server === "A" ? "Srv A" : "Srv B";
 
-    if (state.locked || state.matchFinished){
-      scoreAEl.classList.add("disabled");
-      scoreBEl.classList.add("disabled");
+    if (state.locked || state.matchFinished) {
+      els.scoreA.classList.add("disabled");
+      els.scoreB.classList.add("disabled");
     } else {
-      scoreAEl.classList.remove("disabled");
-      scoreBEl.classList.remove("disabled");
+      els.scoreA.classList.remove("disabled");
+      els.scoreB.classList.remove("disabled");
     }
 
-    if (state.locked){
-      lockBtn.classList.add("locked");
-    } else {
-      lockBtn.classList.remove("locked");
-    }
+    if (state.locked) els.lockBtn.classList.add("locked");
+    else els.lockBtn.classList.remove("locked");
   }
 
-  bindTap(scoreAEl, incrementA);
-  bindTap(scoreBEl, incrementB);
-  bindTap(modeBtn, toggleMode);
-  bindTap(lockBtn, toggleLock);
-  bindTap(audioBtn, toggleAudio);
-  bindTap(serverBtn, toggleServer);
-  bindTap(undoBtn, doUndo);
+  bindTap(els.scoreA, incrementA);
+  bindTap(els.scoreB, incrementB);
+  bindTap(els.modeBtn, toggleMode);
+  bindTap(els.lockBtn, toggleLock);
+  bindTap(els.audioBtn, toggleAudio);
+  bindTap(els.serverBtn, toggleServer);
+  bindTap(els.undoBtn, doUndo);
 
-  resetBtn.addEventListener("touchstart", function(e){
+  els.resetBtn.addEventListener("touchstart", function (e) {
     e.preventDefault();
-    resetBtn.classList.add("holding");
+    els.resetBtn.classList.add("holding");
     resetTimer = setTimeout(doReset, 800);
   }, { passive:false });
 
-  resetBtn.addEventListener("touchend", function(){
+  els.resetBtn.addEventListener("touchend", function () {
     clearTimeout(resetTimer);
-    resetBtn.classList.remove("holding");
+    els.resetBtn.classList.remove("holding");
   });
 
-  resetBtn.addEventListener("touchcancel", function(){
+  els.resetBtn.addEventListener("touchcancel", function () {
     clearTimeout(resetTimer);
-    resetBtn.classList.remove("holding");
+    els.resetBtn.classList.remove("holding");
   });
 
-  undoBtn.addEventListener("touchstart", function(e){
+  els.undoBtn.addEventListener("touchstart", function (e) {
     e.preventDefault();
-    undoBtn.classList.add("holding");
+    els.undoBtn.classList.add("holding");
     undoTimer = setTimeout(doUndo, 600);
   }, { passive:false });
 
-  undoBtn.addEventListener("touchend", function(){
+  els.undoBtn.addEventListener("touchend", function () {
     clearTimeout(undoTimer);
-    undoBtn.classList.remove("holding");
+    els.undoBtn.classList.remove("holding");
   });
 
-  undoBtn.addEventListener("touchcancel", function(){
+  els.undoBtn.addEventListener("touchcancel", function () {
     clearTimeout(undoTimer);
-    undoBtn.classList.remove("holding");
+    els.undoBtn.classList.remove("holding");
   });
 
   render();
+})();
 </script>
 </body>
 </html>
