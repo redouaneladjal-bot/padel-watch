@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V17</title>
+<title>PadelTap V19</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -62,7 +62,7 @@
   .modeLabel{
     position:absolute;
     top:13%;
-    left:27%;
+    left:31%;
     font-size:11px;
     color:white;
     font-weight:bold;
@@ -109,9 +109,9 @@
 
   .serverBtn{
     position:absolute;
-    top:12%;
-    left:64%;
-    width:86px;
+    top:67%;
+    left:34%;
+    width:78px;
     height:30px;
     border-radius:16px;
     display:flex;
@@ -376,7 +376,6 @@
 
   function advanceSetIfNeeded(){
     const current = state.sets[state.currentSet];
-
     if (!currentSetFinished(current)) return;
 
     if (state.currentSet < 2){
@@ -386,9 +385,11 @@
     }
   }
 
-  function pointDisplayValue(v){
-    const labels = ["0","15","30","40"];
-    return labels[Math.min(v,3)];
+  function tennisWord(v){
+    if (v === 0) return "love";
+    if (v === 1) return "15";
+    if (v === 2) return "30";
+    return "40";
   }
 
   function currentGames(){
@@ -398,26 +399,32 @@
     };
   }
 
+  function setOrdinal(index){
+    if (index === 0) return "first";
+    if (index === 1) return "second";
+    return "third";
+  }
+
   function announcePoint(){
     if (state.matchFinished) return;
 
     if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3){
       if (state.pointA === state.pointB){
-        speak("Deuce");
+        speak("deuce");
         return;
       }
 
       const advTeam = state.pointA > state.pointB ? "A" : "B";
       if (advTeam === state.server){
-        speak("Advantage server");
+        speak("advantage server");
       } else {
-        speak("Advantage receiver");
+        speak("advantage receiver");
       }
       return;
     }
 
-    const aText = pointDisplayValue(state.pointA);
-    const bText = pointDisplayValue(state.pointB);
+    const aText = tennisWord(state.pointA);
+    const bText = tennisWord(state.pointB);
 
     let first, second;
     if (state.server === "A"){
@@ -428,56 +435,47 @@
       second = aText;
     }
 
-    speak(first + " " + second);
+    if (first === second){
+      speak(first + " all");
+    } else {
+      speak(first + " " + second);
+    }
   }
 
-  function announceGameWinner(team){
-    const games = currentGames();
+  function announceGameOrSet(team, finishedSetNow, matchFinishedNow){
+    const announcedSets = [];
+    const maxIndex = Math.min(state.currentSet, 2);
 
-    const set1 = state.sets[0];
-    const set2 = state.sets[1];
-    const set3 = state.sets[2];
+    for (let i = 0; i <= maxIndex; i++){
+      announcedSets.push(state.sets[i].a + " " + state.sets[i].b);
+    }
 
-    const text =
-      "Game " + team + ". " +
-      "Sets " +
-      set1.a + " " + set2.a + " " + set3.a +
-      " against " +
-      set1.b + " " + set2.b + " " + set3.b + ". " +
-      "Games " + games.a + " " + games.b + ".";
+    if (matchFinishedNow){
+      speak(
+        "game, " + setOrdinal(2) + " set, and match Team " + team +
+        ". Final set score " + announcedSets.join(", ")
+      );
+      return;
+    }
 
-    speak(text);
-  }
-
-  function announceMatchFinished(){
-    const set1 = state.sets[0];
-    const set2 = state.sets[1];
-    const set3 = state.sets[2];
-
-    let wonA = 0;
-    let wonB = 0;
-
-    [set1, set2, set3].forEach(s => {
-      if (currentSetFinished(s)) {
-        if (s.a > s.b) wonA++;
-        else if (s.b > s.a) wonB++;
-      }
-    });
-
-    const winner = wonA > wonB ? "A" : "B";
+    if (finishedSetNow){
+      speak(
+        "game and " + setOrdinal(state.currentSet - 1) + " set Team " + team +
+        ". Set score " + announcedSets.join(", ")
+      );
+      return;
+    }
 
     speak(
-      "Match finished. Winner team " + winner + ". " +
-      "Final sets " +
-      set1.a + " " + set2.a + " " + set3.a +
-      " against " +
-      set1.b + " " + set2.b + " " + set3.b + "."
+      "game Team " + team +
+      ". Set score " + announcedSets.join(", ")
     );
   }
 
   function winGame(team){
     if (state.matchFinished) return;
 
+    const oldSetIndex = state.currentSet;
     const current = state.sets[state.currentSet];
 
     if (team === "A") current.a += 1;
@@ -486,14 +484,19 @@
     state.pointA = 0;
     state.pointB = 0;
 
-    announceGameWinner(team);
+    const setJustFinished = currentSetFinished(current);
 
-    const previousSet = state.currentSet;
     advanceSetIfNeeded();
 
     if (state.matchFinished){
-      announceMatchFinished();
+      announceGameOrSet(team, true, true);
       return;
+    }
+
+    if (setJustFinished && state.currentSet !== oldSetIndex){
+      announceGameOrSet(team, true, false);
+    } else {
+      announceGameOrSet(team, false, false);
     }
 
     state.server = state.server === "A" ? "B" : "A";
@@ -647,14 +650,14 @@
     state.pointB = 0;
     vibrate(35);
     render();
-    speak(state.mode === "golden" ? "Golden point" : "Normal mode");
+    speak(state.mode === "golden" ? "golden point" : "normal mode");
   }
 
   function toggleLock(){
     state.locked = !state.locked;
     vibrate(35);
     render();
-    speak(state.locked ? "Locked" : "Unlocked");
+    speak(state.locked ? "locked" : "unlocked");
   }
 
   function toggleAudio(){
@@ -664,7 +667,7 @@
     render();
 
     if (!wasEnabled && state.audioEnabled){
-      speak("Audio on");
+      speak("audio on");
     }
   }
 
@@ -672,7 +675,7 @@
     state.server = state.server === "A" ? "B" : "A";
     vibrate(35);
     render();
-    speak("Server " + state.server);
+    speak("server " + state.server);
   }
 
   function doReset(){
@@ -689,7 +692,7 @@
     state.server = "A";
     vibrate([40,40,40]);
     render();
-    speak("Match reset");
+    speak("match reset");
   }
 
   function doUndo(){
@@ -697,7 +700,7 @@
     state = history.pop();
     vibrate([30,30]);
     render();
-    speak("Undo");
+    speak("undo");
   }
 
   function render(){
