@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap Final</title>
+<title>PadelTap V17</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -45,7 +45,7 @@
   .mode{
     position:absolute;
     top:4%;
-    left:33%;
+    left:28%;
     width:60px;
     height:30px;
     border-radius:16px;
@@ -56,12 +56,13 @@
     color:white;
     background:rgba(255,255,255,.18);
     border:2px solid rgba(255,255,255,.28);
+    font-size:14px;
   }
 
   .modeLabel{
     position:absolute;
     top:13%;
-    left:31%;
+    left:27%;
     font-size:11px;
     color:white;
     font-weight:bold;
@@ -70,7 +71,7 @@
   .lock{
     position:absolute;
     top:4%;
-    left:54%;
+    left:48%;
     width:50px;
     height:50px;
     border-radius:50%;
@@ -87,6 +88,40 @@
   .lock.locked{
     background:var(--lock);
     border-color:var(--lockBorder);
+  }
+
+  .audioBtn{
+    position:absolute;
+    top:4%;
+    left:64%;
+    width:86px;
+    height:30px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    color:white;
+    background:rgba(255,255,255,.18);
+    border:2px solid rgba(255,255,255,.28);
+    font-size:12px;
+  }
+
+  .serverBtn{
+    position:absolute;
+    top:12%;
+    left:64%;
+    width:86px;
+    height:30px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    color:white;
+    background:rgba(255,255,255,.18);
+    border:2px solid rgba(255,255,255,.28);
+    font-size:12px;
   }
 
   .setLabel{
@@ -211,6 +246,9 @@
   <div class="modeLabel" id="modeLabel">G - Golden</div>
   <div class="lock" id="lockBtn">L</div>
 
+  <div class="audioBtn" id="audioBtn">Audio ON</div>
+  <div class="serverBtn" id="serverBtn">Srv A</div>
+
   <div class="setLabel" id="setLabel">SET 1</div>
 
   <div class="sets">
@@ -249,7 +287,10 @@
     ],
     currentSet: 0,
     locked: false,
-    mode: "golden"
+    mode: "golden",
+    matchFinished: false,
+    audioEnabled: true,
+    server: "A"
   };
 
   const history = [];
@@ -264,6 +305,8 @@
   const resetBtn = document.getElementById("resetBtn");
   const undoBtn = document.getElementById("undoBtn");
   const setLabel = document.getElementById("setLabel");
+  const audioBtn = document.getElementById("audioBtn");
+  const serverBtn = document.getElementById("serverBtn");
 
   const setEls = {
     a1: document.getElementById("setA1"),
@@ -278,6 +321,19 @@
     try {
       if (navigator.vibrate) navigator.vibrate(ms || 30);
     } catch (e) {}
+  }
+
+  function speak(text){
+    if (!state.audioEnabled) return;
+    try{
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      speechSynthesis.speak(utter);
+    } catch(e){}
   }
 
   function cloneState(obj){
@@ -320,12 +376,108 @@
 
   function advanceSetIfNeeded(){
     const current = state.sets[state.currentSet];
-    if (currentSetFinished(current) && state.currentSet < 2){
+
+    if (!currentSetFinished(current)) return;
+
+    if (state.currentSet < 2){
       state.currentSet += 1;
+    } else {
+      state.matchFinished = true;
     }
   }
 
+  function pointDisplayValue(v){
+    const labels = ["0","15","30","40"];
+    return labels[Math.min(v,3)];
+  }
+
+  function currentGames(){
+    return {
+      a: state.sets[state.currentSet].a,
+      b: state.sets[state.currentSet].b
+    };
+  }
+
+  function announcePoint(){
+    if (state.matchFinished) return;
+
+    if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3){
+      if (state.pointA === state.pointB){
+        speak("Deuce");
+        return;
+      }
+
+      const advTeam = state.pointA > state.pointB ? "A" : "B";
+      if (advTeam === state.server){
+        speak("Advantage server");
+      } else {
+        speak("Advantage receiver");
+      }
+      return;
+    }
+
+    const aText = pointDisplayValue(state.pointA);
+    const bText = pointDisplayValue(state.pointB);
+
+    let first, second;
+    if (state.server === "A"){
+      first = aText;
+      second = bText;
+    } else {
+      first = bText;
+      second = aText;
+    }
+
+    speak(first + " " + second);
+  }
+
+  function announceGameWinner(team){
+    const games = currentGames();
+
+    const set1 = state.sets[0];
+    const set2 = state.sets[1];
+    const set3 = state.sets[2];
+
+    const text =
+      "Game " + team + ". " +
+      "Sets " +
+      set1.a + " " + set2.a + " " + set3.a +
+      " against " +
+      set1.b + " " + set2.b + " " + set3.b + ". " +
+      "Games " + games.a + " " + games.b + ".";
+
+    speak(text);
+  }
+
+  function announceMatchFinished(){
+    const set1 = state.sets[0];
+    const set2 = state.sets[1];
+    const set3 = state.sets[2];
+
+    let wonA = 0;
+    let wonB = 0;
+
+    [set1, set2, set3].forEach(s => {
+      if (currentSetFinished(s)) {
+        if (s.a > s.b) wonA++;
+        else if (s.b > s.a) wonB++;
+      }
+    });
+
+    const winner = wonA > wonB ? "A" : "B";
+
+    speak(
+      "Match finished. Winner team " + winner + ". " +
+      "Final sets " +
+      set1.a + " " + set2.a + " " + set3.a +
+      " against " +
+      set1.b + " " + set2.b + " " + set3.b + "."
+    );
+  }
+
   function winGame(team){
+    if (state.matchFinished) return;
+
     const current = state.sets[state.currentSet];
 
     if (team === "A") current.a += 1;
@@ -334,7 +486,17 @@
     state.pointA = 0;
     state.pointB = 0;
 
+    announceGameWinner(team);
+
+    const previousSet = state.currentSet;
     advanceSetIfNeeded();
+
+    if (state.matchFinished){
+      announceMatchFinished();
+      return;
+    }
+
+    state.server = state.server === "A" ? "B" : "A";
   }
 
   function incrementAGolden(){
@@ -418,28 +580,48 @@
   }
 
   function incrementA(){
-    if (state.locked) return;
+    if (state.locked || state.matchFinished) return;
     saveHistory();
+
+    const beforeSets = JSON.stringify(state.sets);
 
     if (state.mode === "golden") incrementAGolden();
     else incrementANormal();
 
     vibrate(25);
+
+    const afterSets = JSON.stringify(state.sets);
+    if (beforeSets === afterSets && !state.matchFinished){
+      announcePoint();
+    }
+
     render();
   }
 
   function incrementB(){
-    if (state.locked) return;
+    if (state.locked || state.matchFinished) return;
     saveHistory();
+
+    const beforeSets = JSON.stringify(state.sets);
 
     if (state.mode === "golden") incrementBGolden();
     else incrementBNormal();
 
     vibrate(25);
+
+    const afterSets = JSON.stringify(state.sets);
+    if (beforeSets === afterSets && !state.matchFinished){
+      announcePoint();
+    }
+
     render();
   }
 
   function getDisplayScore(team){
+    if (state.matchFinished){
+      return "0";
+    }
+
     const a = state.pointA;
     const b = state.pointB;
 
@@ -465,12 +647,32 @@
     state.pointB = 0;
     vibrate(35);
     render();
+    speak(state.mode === "golden" ? "Golden point" : "Normal mode");
   }
 
   function toggleLock(){
     state.locked = !state.locked;
     vibrate(35);
     render();
+    speak(state.locked ? "Locked" : "Unlocked");
+  }
+
+  function toggleAudio(){
+    const wasEnabled = state.audioEnabled;
+    state.audioEnabled = !state.audioEnabled;
+    vibrate(35);
+    render();
+
+    if (!wasEnabled && state.audioEnabled){
+      speak("Audio on");
+    }
+  }
+
+  function toggleServer(){
+    state.server = state.server === "A" ? "B" : "A";
+    vibrate(35);
+    render();
+    speak("Server " + state.server);
   }
 
   function doReset(){
@@ -483,15 +685,19 @@
       { a: 0, b: 0 }
     ];
     state.currentSet = 0;
-    vibrate([40, 40, 40]);
+    state.matchFinished = false;
+    state.server = "A";
+    vibrate([40,40,40]);
     render();
+    speak("Match reset");
   }
 
   function doUndo(){
     if (history.length === 0) return;
     state = history.pop();
-    vibrate([30, 30]);
+    vibrate([30,30]);
     render();
+    speak("Undo");
   }
 
   function render(){
@@ -505,18 +711,24 @@
     setEls.b2.textContent = state.sets[1].b;
     setEls.b3.textContent = state.sets[2].b;
 
-    setLabel.textContent = "SET " + (state.currentSet + 1);
+    setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 3);
     modeBtn.textContent = state.mode === "golden" ? "G" : "N";
     modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
+    audioBtn.textContent = state.audioEnabled ? "Audio ON" : "Audio OFF";
+    serverBtn.textContent = state.server === "A" ? "Srv A" : "Srv B";
 
-    if (state.locked){
-      lockBtn.classList.add("locked");
+    if (state.locked || state.matchFinished){
       scoreAEl.classList.add("disabled");
       scoreBEl.classList.add("disabled");
     } else {
-      lockBtn.classList.remove("locked");
       scoreAEl.classList.remove("disabled");
       scoreBEl.classList.remove("disabled");
+    }
+
+    if (state.locked){
+      lockBtn.classList.add("locked");
+    } else {
+      lockBtn.classList.remove("locked");
     }
   }
 
@@ -524,6 +736,9 @@
   bindTap(scoreBEl, incrementB);
   bindTap(modeBtn, toggleMode);
   bindTap(lockBtn, toggleLock);
+  bindTap(audioBtn, toggleAudio);
+  bindTap(serverBtn, toggleServer);
+  bindTap(undoBtn, doUndo);
 
   resetBtn.addEventListener("touchstart", function(e){
     e.preventDefault();
@@ -556,8 +771,6 @@
     clearTimeout(undoTimer);
     undoBtn.classList.remove("holding");
   });
-
-  bindTap(undoBtn, doUndo);
 
   render();
 </script>
