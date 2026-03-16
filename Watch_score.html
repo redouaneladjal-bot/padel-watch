@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V20</title>
+<title>PadelTap V21</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -297,15 +297,37 @@
     } catch (_) {}
   }
 
+  function pickEnglishVoice() {
+    const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+    if (!voices || !voices.length) return null;
+
+    const preferred =
+      voices.find(v => /en[-_]?US/i.test(v.lang) && /google|samsung|english|us/i.test(v.name)) ||
+      voices.find(v => /en[-_]?GB/i.test(v.lang) && /google|samsung|english|uk/i.test(v.name)) ||
+      voices.find(v => /^en/i.test(v.lang) && /google|samsung|english/i.test(v.name)) ||
+      voices.find(v => /^en/i.test(v.lang)) ||
+      null;
+
+    return preferred;
+  }
+
   function speak(text) {
     if (!state.audioEnabled) return;
+
     try {
       if (!window.speechSynthesis) return;
+
       window.speechSynthesis.cancel();
+
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "en-US";
-      utter.rate = 1;
-      utter.pitch = 1;
+      utter.rate = 0.82;
+      utter.pitch = 0.92;
+      utter.volume = 1.0;
+
+      const voice = pickEnglishVoice();
+      if (voice) utter.voice = voice;
+
       speechSynthesis.speak(utter);
     } catch (_) {}
   }
@@ -396,11 +418,11 @@
 
     if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3) {
       if (state.pointA === state.pointB) {
-        speak("deuce");
+        speak("Deuce");
         return;
       }
       const advTeam = state.pointA > state.pointB ? "A" : "B";
-      speak(advTeam === state.server ? "advantage server" : "advantage receiver");
+      speak(advTeam === state.server ? "Advantage, server" : "Advantage, receiver");
       return;
     }
 
@@ -411,9 +433,9 @@
     const second = state.server === "A" ? bText : aText;
 
     if (first === second) {
-      speak(first + " all");
+      speak(first + ", all");
     } else {
-      speak(first + " " + second);
+      speak(first + ", " + second);
     }
   }
 
@@ -429,21 +451,21 @@
   function announceGameOrSet(team, finishedSetNow, matchFinishedNow, setIndexJustWon) {
     if (matchFinishedNow) {
       const finalScores = state.sets.map(s => s.a + " " + s.b).join(", ");
-      speak("game, third set, and match Team " + team + ". Final set score " + finalScores);
+      speak("Game, third set, and match. Team " + team + ". Final set score. " + finalScores);
       return;
     }
 
     if (finishedSetNow) {
       speak(
-        "game and " + setOrdinal(setIndexJustWon) + " set Team " + team +
-        ". Set score " + currentVisibleSetScores().join(", ")
+        "Game and " + setOrdinal(setIndexJustWon) + " set. Team " + team +
+        ". Set score. " + currentVisibleSetScores().join(", ")
       );
       return;
     }
 
     speak(
-      "game Team " + team +
-      ". Set score " + currentVisibleSetScores().join(", ")
+      "Game. Team " + team +
+      ". Set score. " + currentVisibleSetScores().join(", ")
     );
   }
 
@@ -593,14 +615,14 @@
     state.pointB = 0;
     vibrate(35);
     render();
-    speak(state.mode === "golden" ? "golden point" : "normal mode");
+    speak(state.mode === "golden" ? "Golden point" : "Normal mode");
   }
 
   function toggleLock() {
     state.locked = !state.locked;
     vibrate(35);
     render();
-    speak(state.locked ? "locked" : "unlocked");
+    speak(state.locked ? "Locked" : "Unlocked");
   }
 
   function toggleAudio() {
@@ -609,14 +631,14 @@
     vibrate(35);
     render();
 
-    if (!wasEnabled && state.audioEnabled) speak("audio on");
+    if (!wasEnabled && state.audioEnabled) speak("Audio on");
   }
 
   function toggleServer() {
     state.server = state.server === "A" ? "B" : "A";
     vibrate(35);
     render();
-    speak("server " + state.server);
+    speak("Server " + state.server);
   }
 
   function doReset() {
@@ -633,7 +655,7 @@
     state.server = "A";
     vibrate([40,40,40]);
     render();
-    speak("match reset");
+    speak("Match reset");
   }
 
   function doUndo() {
@@ -645,7 +667,7 @@
     state.audioEnabled = previousAudio;
     vibrate([30,30]);
     render();
-    speak("undo");
+    speak("Undo");
   }
 
   function render() {
@@ -716,6 +738,10 @@
     clearTimeout(undoTimer);
     els.undoBtn.classList.remove("holding");
   });
+
+  if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = function () {};
+  }
 
   render();
 })();
