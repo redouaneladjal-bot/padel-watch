@@ -214,14 +214,21 @@
   /* ── Match finished overlay ── */
   #matchOverlay{
     display:none;
-    position:absolute;
-    inset:0;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    width:100%;
+    height:100%;
     background:rgba(0,0,0,0.85);
-    z-index:10;
+    z-index:100;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:16px;
+    gap:12px;
+    padding:16px;
+    text-align:center;
   }
 
   #matchOverlay.show{ display:flex; }
@@ -230,20 +237,17 @@
     color:var(--yellow);
     font-size:28px;
     margin:0;
-    text-align:center;
   }
 
   #matchOverlay .winner{
     color:white;
     font-size:22px;
     font-weight:bold;
-    text-align:center;
   }
 
   #matchOverlay .finalScore{
     color:white;
     font-size:16px;
-    text-align:center;
   }
 
   #matchOverlay .resetOverlayBtn{
@@ -310,13 +314,7 @@
   const state = {
     pointA: 0,
     pointB: 0,
-    sets: [
-      { a: 0, b: 0 },
-      { a: 0, b: 0 },
-      { a: 0, b: 0 },
-      { a: 0, b: 0 },
-      { a: 0, b: 0 }
-    ],
+    sets: Array(5).fill(null).map(() => ({ a: 0, b: 0 })),
     currentSet: 0,
     locked: false,
     mode: "golden",
@@ -329,7 +327,6 @@
   const history = [];
   let resetTimer = null;
   let speechQueue = [];
-  let isSpeaking = false;
 
   const els = {
     scoreA: document.getElementById("scoreA"),
@@ -368,12 +365,8 @@
   }
 
   function speakNext() {
-    if (!speechQueue.length) { isSpeaking = false; return; }
-    if (!state.audioEnabled) { speechQueue = []; isSpeaking = false; return; }
-
-    isSpeaking = true;
+    if (!speechQueue.length || !state.audioEnabled) { speechQueue = []; return; }
     const text = speechQueue.shift();
-
     try {
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "en-US";
@@ -382,13 +375,8 @@
       utter.volume = 1.0;
       const voice = pickEnglishVoice();
       if (voice) utter.voice = voice;
-
-      utter.onend = () => {
-        // Pause de 350ms entre chaque phrase
-        setTimeout(speakNext, 350);
-      };
+      utter.onend = () => setTimeout(speakNext, 350);
       utter.onerror = () => setTimeout(speakNext, 350);
-
       speechSynthesis.speak(utter);
     } catch (_) { speakNext(); }
   }
@@ -397,13 +385,10 @@
     if (!state.audioEnabled) return;
     window.speechSynthesis.cancel();
     speechQueue = [...phrases];
-    isSpeaking = false;
     speakNext();
   }
 
-  function speak(text) {
-    speakSequence([text]);
-  }
+  function speak(text) { speakSequence([text]); }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -436,8 +421,8 @@
     return "40";
   }
 
-  function isSetFinished(setObj) {
-    return (setObj.a >= 6 || setObj.b >= 6) && Math.abs(setObj.a - setObj.b) >= 2;
+  function isSetFinished(s) {
+    return (s.a >= 6 || s.b >= 6) && Math.abs(s.a - s.b) >= 2;
   }
 
   function setsWon(team) {
@@ -450,18 +435,15 @@
   function getDisplayScore(team) {
     if (state.matchFinished) return "0";
     const a = state.pointA, b = state.pointB;
-
     if (state.mode === "golden") {
       const labels = ["0","15","30","40"];
       return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
     }
-
     if (a >= 3 && b >= 3) {
       if (a === b) return "D";
       if (team === "A") return a > b ? "A" : "40";
       return b > a ? "A" : "40";
     }
-
     const labels = ["0","15","30","40","A"];
     return team === "A" ? labels[a] : labels[b];
   }
@@ -470,14 +452,12 @@
 
   function announcePoint() {
     if (state.matchFinished) return;
-
     if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3) {
       if (state.pointA === state.pointB) { speak("Deuce"); return; }
       const advTeam = state.pointA > state.pointB ? "A" : "B";
       speak(advTeam === state.server ? "Advantage, server" : "Advantage, receiver");
       return;
     }
-
     const aText = tennisWord(state.pointA);
     const bText = tennisWord(state.pointB);
     const first  = state.server === "A" ? aText : bText;
@@ -506,7 +486,6 @@
       ]);
       return;
     }
-
     if (setJustFinished) {
       speakSequence([
         "Set " + teamName + ".",
@@ -515,7 +494,6 @@
       ]);
       return;
     }
-
     speakSequence([
       teamName + " wins the game.",
       gameScore + ".",
@@ -527,16 +505,11 @@
 
   function winGame(team) {
     if (state.matchFinished) return;
-
-    const oldSetIndex = state.currentSet;
     const current = state.sets[state.currentSet];
-
     if (team === "A") current.a += 1;
     else current.b += 1;
 
-    // Snapshot du score du set AVANT reset
     const setScoreSnapshot = { a: current.a, b: current.b };
-
     state.pointA = 0;
     state.pointB = 0;
 
@@ -546,21 +519,15 @@
     if (setJustFinished) {
       const wA = setsWon("A");
       const wB = setsWon("B");
-
       if (wA >= 3) {
-        state.matchFinished = true;
-        state.winner = "A";
-        matchFinishedNow = true;
+        state.matchFinished = true; state.winner = "A"; matchFinishedNow = true;
       } else if (wB >= 3) {
-        state.matchFinished = true;
-        state.winner = "B";
-        matchFinishedNow = true;
+        state.matchFinished = true; state.winner = "B"; matchFinishedNow = true;
       } else if (state.currentSet < 4) {
         state.currentSet += 1;
       }
     }
 
-    // Change de serveur seulement si le match continue
     if (!matchFinishedNow) {
       state.server = state.server === "A" ? "B" : "A";
     }
@@ -580,7 +547,7 @@
 
   function incrementANormal() {
     const a = state.pointA, b = state.pointB;
-    if (a < 3) { state.pointA += 1; return; }
+    if (a < 3)             { state.pointA += 1; return; }
     if (a === 3 && b < 3)  { winGame("A"); return; }
     if (a === 3 && b === 3){ state.pointA = 4; return; }
     if (a === 4 && b === 3){ winGame("A"); return; }
@@ -589,7 +556,7 @@
 
   function incrementBNormal() {
     const a = state.pointA, b = state.pointB;
-    if (b < 3) { state.pointB += 1; return; }
+    if (b < 3)             { state.pointB += 1; return; }
     if (b === 3 && a < 3)  { winGame("B"); return; }
     if (b === 3 && a === 3){ state.pointB = 4; return; }
     if (b === 4 && a === 3){ winGame("B"); return; }
@@ -698,11 +665,10 @@
     if (state.locked) els.lockBtn.classList.add("locked");
     else els.lockBtn.classList.remove("locked");
 
-    // Overlay fin de match
     if (state.matchFinished && state.winner) {
       els.overlayWinner.textContent = "🏆 Team " + state.winner + " wins!";
       const finalSets = state.sets
-        .filter((s,i) => i <= state.currentSet)
+        .filter((s, i) => i <= state.currentSet)
         .map(s => s.a + "-" + s.b)
         .join("  ");
       els.overlayScore.textContent = finalSets;
