@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V21</title>
+<title>PadelTap V22</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -210,6 +210,53 @@
     background:var(--lock) !important;
     border-color:var(--lockBorder) !important;
   }
+
+  /* ── Match finished overlay ── */
+  #matchOverlay{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:10;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+  }
+
+  #matchOverlay.show{ display:flex; }
+
+  #matchOverlay h1{
+    color:var(--yellow);
+    font-size:28px;
+    margin:0;
+    text-align:center;
+  }
+
+  #matchOverlay .winner{
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+    text-align:center;
+  }
+
+  #matchOverlay .finalScore{
+    color:white;
+    font-size:16px;
+    text-align:center;
+  }
+
+  #matchOverlay .resetOverlayBtn{
+    margin-top:8px;
+    background:var(--blue);
+    border:2px solid var(--blueBorder);
+    border-radius:12px;
+    color:var(--textDark);
+    font-size:18px;
+    font-weight:bold;
+    padding:10px 32px;
+    cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -248,6 +295,14 @@
 
   <div class="circle-btn reset" id="resetBtn">R</div>
   <div class="circle-btn undo" id="undoBtn">U</div>
+
+  <!-- Match finished overlay -->
+  <div id="matchOverlay">
+    <h1>MATCH FINI</h1>
+    <div class="winner" id="overlayWinner"></div>
+    <div class="finalScore" id="overlayScore"></div>
+    <div class="resetOverlayBtn" id="resetOverlayBtn">Reset</div>
+  </div>
 </div>
 
 <script>
@@ -258,6 +313,8 @@
     sets: [
       { a: 0, b: 0 },
       { a: 0, b: 0 },
+      { a: 0, b: 0 },
+      { a: 0, b: 0 },
       { a: 0, b: 0 }
     ],
     currentSet: 0,
@@ -265,12 +322,14 @@
     mode: "golden",
     matchFinished: false,
     audioEnabled: true,
-    server: "A"
+    server: "A",
+    winner: null
   };
 
   const history = [];
   let resetTimer = null;
-  let undoTimer = null;
+  let speechQueue = [];
+  let isSpeaking = false;
 
   const els = {
     scoreA: document.getElementById("scoreA"),
@@ -288,53 +347,71 @@
     setA3: document.getElementById("setA3"),
     setB1: document.getElementById("setB1"),
     setB2: document.getElementById("setB2"),
-    setB3: document.getElementById("setB3")
+    setB3: document.getElementById("setB3"),
+    matchOverlay: document.getElementById("matchOverlay"),
+    overlayWinner: document.getElementById("overlayWinner"),
+    overlayScore: document.getElementById("overlayScore"),
+    resetOverlayBtn: document.getElementById("resetOverlayBtn")
   };
 
-  function vibrate(pattern) {
-    try {
-      if (navigator.vibrate) navigator.vibrate(pattern || 30);
-    } catch (_) {}
-  }
+  // ── Speech queue with pauses ──────────────────────────────────────────────
 
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
     if (!voices || !voices.length) return null;
-
-    const preferred =
+    return (
       voices.find(v => /en[-_]?US/i.test(v.lang) && /google|samsung|english|us/i.test(v.name)) ||
-      voices.find(v => /en[-_]?GB/i.test(v.lang) && /google|samsung|english|uk/i.test(v.name)) ||
-      voices.find(v => /^en/i.test(v.lang) && /google|samsung|english/i.test(v.name)) ||
+      voices.find(v => /en[-_]?GB/i.test(v.lang)) ||
       voices.find(v => /^en/i.test(v.lang)) ||
-      null;
-
-    return preferred;
+      null
+    );
   }
 
-  function speak(text) {
-    if (!state.audioEnabled) return;
+  function speakNext() {
+    if (!speechQueue.length) { isSpeaking = false; return; }
+    if (!state.audioEnabled) { speechQueue = []; isSpeaking = false; return; }
+
+    isSpeaking = true;
+    const text = speechQueue.shift();
 
     try {
-      if (!window.speechSynthesis) return;
-
-      window.speechSynthesis.cancel();
-
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "en-US";
       utter.rate = 0.82;
       utter.pitch = 0.92;
       utter.volume = 1.0;
-
       const voice = pickEnglishVoice();
       if (voice) utter.voice = voice;
 
+      utter.onend = () => {
+        // Pause de 350ms entre chaque phrase
+        setTimeout(speakNext, 350);
+      };
+      utter.onerror = () => setTimeout(speakNext, 350);
+
       speechSynthesis.speak(utter);
-    } catch (_) {}
+    } catch (_) { speakNext(); }
   }
 
-  function cloneState() {
-    return JSON.parse(JSON.stringify(state));
+  function speakSequence(phrases) {
+    if (!state.audioEnabled) return;
+    window.speechSynthesis.cancel();
+    speechQueue = [...phrases];
+    isSpeaking = false;
+    speakNext();
   }
+
+  function speak(text) {
+    speakSequence([text]);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function vibrate(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern || 30); } catch (_) {}
+  }
+
+  function cloneState() { return JSON.parse(JSON.stringify(state)); }
 
   function saveHistory() {
     history.push(cloneState());
@@ -343,20 +420,12 @@
 
   function bindTap(el, handler) {
     let touched = false;
-
     el.addEventListener("touchstart", function (e) {
-      touched = true;
-      e.preventDefault();
-      handler();
+      touched = true; e.preventDefault(); handler();
     }, { passive: false });
-
     el.addEventListener("click", function (e) {
-      if (touched) {
-        touched = false;
-        return;
-      }
-      e.preventDefault();
-      handler();
+      if (touched) { touched = false; return; }
+      e.preventDefault(); handler();
     });
   }
 
@@ -367,29 +436,24 @@
     return "40";
   }
 
-  function setOrdinal(index) {
-    if (index === 0) return "first";
-    if (index === 1) return "second";
-    return "third";
-  }
-
-  function isDeuceState() {
-    return state.pointA >= 3 && state.pointB >= 3;
-  }
-
-  function currentSetFinished(setObj) {
+  function isSetFinished(setObj) {
     return (setObj.a >= 6 || setObj.b >= 6) && Math.abs(setObj.a - setObj.b) >= 2;
+  }
+
+  function setsWon(team) {
+    return state.sets.filter(s => {
+      if (!isSetFinished(s)) return false;
+      return team === "A" ? s.a > s.b : s.b > s.a;
+    }).length;
   }
 
   function getDisplayScore(team) {
     if (state.matchFinished) return "0";
-
-    const a = state.pointA;
-    const b = state.pointB;
+    const a = state.pointA, b = state.pointB;
 
     if (state.mode === "golden") {
-      const labels = ["0", "15", "30", "40"];
-      return team === "A" ? labels[Math.min(a, 3)] : labels[Math.min(b, 3)];
+      const labels = ["0","15","30","40"];
+      return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
     }
 
     if (a >= 3 && b >= 3) {
@@ -398,29 +462,17 @@
       return b > a ? "A" : "40";
     }
 
-    const labels = ["0", "15", "30", "40", "A"];
+    const labels = ["0","15","30","40","A"];
     return team === "A" ? labels[a] : labels[b];
   }
 
-  function advanceSetIfNeeded() {
-    const current = state.sets[state.currentSet];
-    if (!currentSetFinished(current)) return;
-
-    if (state.currentSet < 2) {
-      state.currentSet += 1;
-    } else {
-      state.matchFinished = true;
-    }
-  }
+  // ── Announce ──────────────────────────────────────────────────────────────
 
   function announcePoint() {
     if (state.matchFinished) return;
 
     if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3) {
-      if (state.pointA === state.pointB) {
-        speak("Deuce");
-        return;
-      }
+      if (state.pointA === state.pointB) { speak("Deuce"); return; }
       const advTeam = state.pointA > state.pointB ? "A" : "B";
       speak(advTeam === state.server ? "Advantage, server" : "Advantage, receiver");
       return;
@@ -428,46 +480,50 @@
 
     const aText = tennisWord(state.pointA);
     const bText = tennisWord(state.pointB);
-
-    const first = state.server === "A" ? aText : bText;
+    const first  = state.server === "A" ? aText : bText;
     const second = state.server === "A" ? bText : aText;
-
-    if (first === second) {
-      speak(first + ", all");
-    } else {
-      speak(first + ", " + second);
-    }
+    speak(first === second ? first + ", all" : first + ", " + second);
   }
 
-  function currentVisibleSetScores() {
-    const limit = Math.min(state.currentSet, 2);
+  function finalScoreString() {
+    const limit = Math.min(state.currentSet, 4);
     const arr = [];
     for (let i = 0; i <= limit; i++) {
-      arr.push(state.sets[i].a + " " + state.sets[i].b);
+      arr.push(state.sets[i].a + " to " + state.sets[i].b);
     }
-    return arr;
+    return arr.join(", ");
   }
 
-  function announceGameOrSet(team, finishedSetNow, matchFinishedNow, setIndexJustWon) {
+  function announceGame(team, setScore, setJustFinished, matchFinishedNow) {
+    const serverName = "Team " + state.server;
+    const teamName   = "Team " + team;
+    const gameScore  = setScore.a + " to " + setScore.b;
+
     if (matchFinishedNow) {
-      const finalScores = state.sets.map(s => s.a + " " + s.b).join(", ");
-      speak("Game, third set, and match. Team " + team + ". Final set score. " + finalScores);
+      speakSequence([
+        "Game, set and match " + teamName + "!",
+        "Final score, " + finalScoreString()
+      ]);
       return;
     }
 
-    if (finishedSetNow) {
-      speak(
-        "Game and " + setOrdinal(setIndexJustWon) + " set. Team " + team +
-        ". Set score. " + currentVisibleSetScores().join(", ")
-      );
+    if (setJustFinished) {
+      speakSequence([
+        "Set " + teamName + ".",
+        gameScore + ".",
+        serverName + " to serve"
+      ]);
       return;
     }
 
-    speak(
-      "Game. Team " + team +
-      ". Set score. " + currentVisibleSetScores().join(", ")
-    );
+    speakSequence([
+      teamName + " wins the game.",
+      gameScore + ".",
+      serverName + " to serve"
+    ]);
   }
+
+  // ── Core logic ────────────────────────────────────────────────────────────
 
   function winGame(team) {
     if (state.matchFinished) return;
@@ -478,197 +534,141 @@
     if (team === "A") current.a += 1;
     else current.b += 1;
 
+    // Snapshot du score du set AVANT reset
+    const setScoreSnapshot = { a: current.a, b: current.b };
+
     state.pointA = 0;
     state.pointB = 0;
 
-    const setJustFinished = currentSetFinished(current);
-    advanceSetIfNeeded();
+    const setJustFinished = isSetFinished(current);
+    let matchFinishedNow = false;
 
-    if (state.matchFinished) {
-      announceGameOrSet(team, true, true, oldSetIndex);
-      return;
+    if (setJustFinished) {
+      const wA = setsWon("A");
+      const wB = setsWon("B");
+
+      if (wA >= 3) {
+        state.matchFinished = true;
+        state.winner = "A";
+        matchFinishedNow = true;
+      } else if (wB >= 3) {
+        state.matchFinished = true;
+        state.winner = "B";
+        matchFinishedNow = true;
+      } else if (state.currentSet < 4) {
+        state.currentSet += 1;
+      }
     }
 
-    if (setJustFinished && state.currentSet !== oldSetIndex) {
-      announceGameOrSet(team, true, false, oldSetIndex);
-    } else {
-      announceGameOrSet(team, false, false, oldSetIndex);
+    // Change de serveur seulement si le match continue
+    if (!matchFinishedNow) {
+      state.server = state.server === "A" ? "B" : "A";
     }
 
-    state.server = state.server === "A" ? "B" : "A";
+    announceGame(team, setScoreSnapshot, setJustFinished, matchFinishedNow);
   }
 
   function incrementAGolden() {
-    if (state.pointA <= 2) {
-      state.pointA += 1;
-      return;
-    }
-    if (state.pointA === 3 && state.pointB < 3) {
-      winGame("A");
-      return;
-    }
-    if (state.pointA === 3 && state.pointB === 3) {
-      winGame("A");
-    }
+    if (state.pointA <= 2) { state.pointA += 1; return; }
+    winGame("A");
   }
 
   function incrementBGolden() {
-    if (state.pointB <= 2) {
-      state.pointB += 1;
-      return;
-    }
-    if (state.pointB === 3 && state.pointA < 3) {
-      winGame("B");
-      return;
-    }
-    if (state.pointA === 3 && state.pointB === 3) {
-      winGame("B");
-    }
+    if (state.pointB <= 2) { state.pointB += 1; return; }
+    winGame("B");
   }
 
   function incrementANormal() {
-    if (!isDeuceState()) {
-      if (state.pointA <= 2) {
-        state.pointA += 1;
-        return;
-      }
-      if (state.pointA === 3 && state.pointB < 3) {
-        winGame("A");
-        return;
-      }
-      if (state.pointA === 3 && state.pointB === 3) {
-        state.pointA = 4;
-        return;
-      }
-    } else {
-      if (state.pointA === state.pointB) state.pointA += 1;
-      else if (state.pointA > state.pointB) winGame("A");
-      else {
-        state.pointA = 3;
-        state.pointB = 3;
-      }
-    }
+    const a = state.pointA, b = state.pointB;
+    if (a < 3) { state.pointA += 1; return; }
+    if (a === 3 && b < 3)  { winGame("A"); return; }
+    if (a === 3 && b === 3){ state.pointA = 4; return; }
+    if (a === 4 && b === 3){ winGame("A"); return; }
+    if (a === 3 && b === 4){ state.pointA = 3; state.pointB = 3; }
   }
 
   function incrementBNormal() {
-    if (!isDeuceState()) {
-      if (state.pointB <= 2) {
-        state.pointB += 1;
-        return;
-      }
-      if (state.pointB === 3 && state.pointA < 3) {
-        winGame("B");
-        return;
-      }
-      if (state.pointA === 3 && state.pointB === 3) {
-        state.pointB = 4;
-        return;
-      }
-    } else {
-      if (state.pointA === state.pointB) state.pointB += 1;
-      else if (state.pointB > state.pointA) winGame("B");
-      else {
-        state.pointA = 3;
-        state.pointB = 3;
-      }
-    }
+    const a = state.pointA, b = state.pointB;
+    if (b < 3) { state.pointB += 1; return; }
+    if (b === 3 && a < 3)  { winGame("B"); return; }
+    if (b === 3 && a === 3){ state.pointB = 4; return; }
+    if (b === 4 && a === 3){ winGame("B"); return; }
+    if (b === 3 && a === 4){ state.pointA = 3; state.pointB = 3; }
   }
 
   function incrementA() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
-
     const beforeSets = JSON.stringify(state.sets);
-
     if (state.mode === "golden") incrementAGolden();
     else incrementANormal();
-
     vibrate(25);
-
-    const afterSets = JSON.stringify(state.sets);
-    if (beforeSets === afterSets && !state.matchFinished) announcePoint();
-
+    if (JSON.stringify(state.sets) === beforeSets && !state.matchFinished) announcePoint();
     render();
   }
 
   function incrementB() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
-
     const beforeSets = JSON.stringify(state.sets);
-
     if (state.mode === "golden") incrementBGolden();
     else incrementBNormal();
-
     vibrate(25);
-
-    const afterSets = JSON.stringify(state.sets);
-    if (beforeSets === afterSets && !state.matchFinished) announcePoint();
-
+    if (JSON.stringify(state.sets) === beforeSets && !state.matchFinished) announcePoint();
     render();
   }
 
   function toggleMode() {
     saveHistory();
     state.mode = state.mode === "golden" ? "normal" : "golden";
-    state.pointA = 0;
-    state.pointB = 0;
-    vibrate(35);
-    render();
+    state.pointA = 0; state.pointB = 0;
+    vibrate(35); render();
     speak(state.mode === "golden" ? "Golden point" : "Normal mode");
   }
 
   function toggleLock() {
     state.locked = !state.locked;
-    vibrate(35);
-    render();
+    vibrate(35); render();
     speak(state.locked ? "Locked" : "Unlocked");
   }
 
   function toggleAudio() {
-    const wasEnabled = state.audioEnabled;
+    const was = state.audioEnabled;
     state.audioEnabled = !state.audioEnabled;
-    vibrate(35);
-    render();
-
-    if (!wasEnabled && state.audioEnabled) speak("Audio on");
+    vibrate(35); render();
+    if (!was && state.audioEnabled) speak("Audio on");
   }
 
   function toggleServer() {
     state.server = state.server === "A" ? "B" : "A";
-    vibrate(35);
-    render();
-    speak("Server " + state.server);
+    vibrate(35); render();
+    speak("Team " + state.server + " to serve");
   }
 
   function doReset() {
     saveHistory();
-    state.pointA = 0;
-    state.pointB = 0;
-    state.sets = [
-      { a: 0, b: 0 },
-      { a: 0, b: 0 },
-      { a: 0, b: 0 }
-    ];
+    state.pointA = 0; state.pointB = 0;
+    state.sets = Array(5).fill(null).map(() => ({ a: 0, b: 0 }));
     state.currentSet = 0;
     state.matchFinished = false;
+    state.winner = null;
     state.server = "A";
-    vibrate([40,40,40]);
-    render();
+    vibrate([40,40,40]); render();
     speak("Match reset");
   }
 
   function doUndo() {
-    if (history.length === 0) return;
-    const previousAudio = state.audioEnabled;
-    const previous = history.pop();
+    if (!history.length) return;
+    const prevAudio = state.audioEnabled;
+    const prev = history.pop();
     Object.keys(state).forEach(k => delete state[k]);
-    Object.assign(state, previous);
-    state.audioEnabled = previousAudio;
-    vibrate([30,30]);
-    render();
+    Object.assign(state, prev);
+    state.audioEnabled = prevAudio;
+    vibrate([30,30]); render();
     speak("Undo");
   }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   function render() {
     els.scoreA.textContent = getDisplayScore("A");
@@ -681,11 +681,11 @@
     els.setB2.textContent = state.sets[1].b;
     els.setB3.textContent = state.sets[2].b;
 
-    els.setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 3);
+    els.setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 5);
     els.modeBtn.textContent = state.mode === "golden" ? "G" : "N";
     els.modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
     els.audioBtn.textContent = state.audioEnabled ? "A" : "M";
-    els.serverBtn.textContent = state.server === "A" ? "Srv A" : "Srv B";
+    els.serverBtn.textContent = "Srv " + state.server;
 
     if (state.locked || state.matchFinished) {
       els.scoreA.classList.add("disabled");
@@ -697,7 +697,22 @@
 
     if (state.locked) els.lockBtn.classList.add("locked");
     else els.lockBtn.classList.remove("locked");
+
+    // Overlay fin de match
+    if (state.matchFinished && state.winner) {
+      els.overlayWinner.textContent = "🏆 Team " + state.winner + " wins!";
+      const finalSets = state.sets
+        .filter((s,i) => i <= state.currentSet)
+        .map(s => s.a + "-" + s.b)
+        .join("  ");
+      els.overlayScore.textContent = finalSets;
+      els.matchOverlay.classList.add("show");
+    } else {
+      els.matchOverlay.classList.remove("show");
+    }
   }
+
+  // ── Events ────────────────────────────────────────────────────────────────
 
   bindTap(els.scoreA, incrementA);
   bindTap(els.scoreB, incrementB);
@@ -706,12 +721,13 @@
   bindTap(els.audioBtn, toggleAudio);
   bindTap(els.serverBtn, toggleServer);
   bindTap(els.undoBtn, doUndo);
+  bindTap(els.resetOverlayBtn, doReset);
 
   els.resetBtn.addEventListener("touchstart", function (e) {
     e.preventDefault();
     els.resetBtn.classList.add("holding");
     resetTimer = setTimeout(doReset, 800);
-  }, { passive:false });
+  }, { passive: false });
 
   els.resetBtn.addEventListener("touchend", function () {
     clearTimeout(resetTimer);
@@ -721,22 +737,6 @@
   els.resetBtn.addEventListener("touchcancel", function () {
     clearTimeout(resetTimer);
     els.resetBtn.classList.remove("holding");
-  });
-
-  els.undoBtn.addEventListener("touchstart", function (e) {
-    e.preventDefault();
-    els.undoBtn.classList.add("holding");
-    undoTimer = setTimeout(doUndo, 600);
-  }, { passive:false });
-
-  els.undoBtn.addEventListener("touchend", function () {
-    clearTimeout(undoTimer);
-    els.undoBtn.classList.remove("holding");
-  });
-
-  els.undoBtn.addEventListener("touchcancel", function () {
-    clearTimeout(undoTimer);
-    els.undoBtn.classList.remove("holding");
   });
 
   if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
