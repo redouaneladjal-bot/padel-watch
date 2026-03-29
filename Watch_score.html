@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V22</title>
+<title>PadelTap V28</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -126,11 +126,73 @@
 
   .sets{
     position:absolute;
-    left:11%;
+    left:9%;
     top:26%;
-    width:35%;
+    width:40%;
     color:white;
   }
+
+  .setsTable{
+    display:table;
+    width:100%;
+    border-collapse:collapse;
+  }
+
+  .setsRow{
+    display:table-row;
+  }
+
+  .setsCell{
+    display:table-cell;
+    height:38px;
+    vertical-align:middle;
+    text-align:center;
+    font-size:20px;
+    border-right:1px solid var(--grid);
+  }
+
+  .setsCell:last-child{ border-right:none; }
+
+  .setsRow:not(:last-child) .setsCell{
+    border-bottom:1px solid var(--grid);
+  }
+
+  .setsLabelCell{
+    display:table-cell;
+    width:18px;
+    height:38px;
+    vertical-align:middle;
+    text-align:center;
+    font-size:12px;
+    font-weight:bold;
+    padding-right:3px;
+    border-right:3px solid;
+  }
+
+  .setsLabelCell.labelA{
+    color:var(--grey);
+    border-color:var(--grey);
+  }
+
+  .setsLabelCell.labelB{
+    color:var(--yellow);
+    border-color:var(--yellow);
+  }
+
+  .setsHead{
+    font-size:15px;
+    font-weight:bold;
+  }
+
+  .headLabel{
+    display:table-cell;
+    width:18px;
+    padding-right:3px;
+  }
+
+
+
+
 
   .row{
     display:grid;
@@ -174,14 +236,14 @@
   .scoreA{
     top:20%;
     left:58%;
-    background:var(--yellow);
+    background:var(--grey);
     box-shadow:0 0 0 5px white;
   }
 
   .scoreB{
     top:54%;
     left:58%;
-    background:var(--grey);
+    background:var(--yellow);
   }
 
   .disabled{
@@ -211,16 +273,31 @@
     border-color:var(--lockBorder) !important;
   }
 
+  .server.disabled-btn{
+    opacity:0.35;
+    pointer-events:none;
+  }
+
+  /* ── Server ball indicator ── */
+  #serverBall{
+    position:absolute;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--yellow);
+    border:2px solid white;
+    box-shadow:0 0 6px rgba(0,0,0,0.4);
+    transition: top 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1);
+    z-index:5;
+    pointer-events:none;
+  }
+
   /* ── Match finished overlay ── */
   #matchOverlay{
     display:none;
     position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
-    width:100%;
-    height:100%;
+    top:0; left:0; right:0; bottom:0;
+    width:100%; height:100%;
     background:rgba(0,0,0,0.85);
     z-index:100;
     flex-direction:column;
@@ -277,30 +354,40 @@
   <div class="setLabel" id="setLabel">SET 1</div>
 
   <div class="sets">
-    <div class="row">
-      <div class="cell head">1</div>
-      <div class="cell head">2</div>
-      <div class="cell head">3</div>
-    </div>
-    <div class="row">
-      <div class="cell" id="setA1">0</div>
-      <div class="cell" id="setA2">0</div>
-      <div class="cell" id="setA3">0</div>
-    </div>
-    <div class="row">
-      <div class="cell" id="setB1">0</div>
-      <div class="cell" id="setB2">0</div>
-      <div class="cell" id="setB3">0</div>
+    <div class="setsTable">
+      <!-- Header row -->
+      <div class="setsRow">
+        <div class="headLabel"></div>
+        <div class="setsCell setsHead">1</div>
+        <div class="setsCell setsHead">2</div>
+        <div class="setsCell setsHead">3</div>
+      </div>
+      <!-- Row A -->
+      <div class="setsRow" id="rowA">
+        <div class="setsLabelCell labelA">A</div>
+        <div class="setsCell" id="setA1">0</div>
+        <div class="setsCell" id="setA2">0</div>
+        <div class="setsCell" id="setA3">0</div>
+      </div>
+      <!-- Row B -->
+      <div class="setsRow" id="rowB">
+        <div class="setsLabelCell labelB">B</div>
+        <div class="setsCell" id="setB1">0</div>
+        <div class="setsCell" id="setB2">0</div>
+        <div class="setsCell" id="setB3">0</div>
+      </div>
     </div>
   </div>
 
   <div class="score scoreA" id="scoreA">0</div>
   <div class="score scoreB" id="scoreB">0</div>
 
+  <!-- Server ball indicator -->
+  <div id="serverBall"></div>
+
   <div class="circle-btn reset" id="resetBtn">R</div>
   <div class="circle-btn undo" id="undoBtn">U</div>
 
-  <!-- Match finished overlay -->
   <div id="matchOverlay">
     <h1>MATCH FINI</h1>
     <div class="winner" id="overlayWinner"></div>
@@ -321,7 +408,8 @@
     matchFinished: false,
     audioEnabled: true,
     server: "A",
-    winner: null
+    winner: null,
+    servePos: "left"  // left or right, alternates every point
   };
 
   const history = [];
@@ -348,10 +436,50 @@
     matchOverlay: document.getElementById("matchOverlay"),
     overlayWinner: document.getElementById("overlayWinner"),
     overlayScore: document.getElementById("overlayScore"),
-    resetOverlayBtn: document.getElementById("resetOverlayBtn")
+    resetOverlayBtn: document.getElementById("resetOverlayBtn"),
+    serverBall: document.getElementById("serverBall")
   };
 
-  // ── Speech queue with pauses ──────────────────────────────────────────────
+  // ── Server ball position ──────────────────────────────────────────────────
+  // Server A → ball top-left of scoreA
+  // Server B → ball bottom-right of scoreB
+  // After each game it alternates
+
+  function updateServerBall() {
+    const ball = els.serverBall;
+    if (state.matchFinished) { ball.style.display = "none"; return; }
+    ball.style.display = "block";
+
+    const scoreAEl = els.scoreA;
+    const scoreBEl = els.scoreB;
+    const appEl = document.getElementById("app");
+    const aR = scoreAEl.getBoundingClientRect();
+    const bR = scoreBEl.getBoundingClientRect();
+    const ar = appEl.getBoundingClientRect();
+    const sz = 22, off = 4;
+
+    // Server A = top circle (grey), ball on top edge, left or right
+    // Server B = bottom circle (yellow), ball on bottom edge, left or right
+    // servePos = "left" or "right", alternates every point
+    // Server A starts LEFT each new game
+    // Server B starts RIGHT each new game
+    let left, top;
+    if (state.server === "A") {
+      top  = (aR.top - ar.top) - sz/2 + off;
+      left = state.servePos === "left"
+        ? (aR.left  - ar.left) - sz/2 + off
+        : (aR.right - ar.left) - sz/2 - off;
+    } else {
+      top  = (bR.bottom - ar.top) - sz/2 - off;
+      left = state.servePos === "right"
+        ? (bR.right - ar.left) - sz/2 - off
+        : (bR.left  - ar.left) - sz/2 + off;
+    }
+    ball.style.left = left + "px";
+    ball.style.top  = top  + "px";
+  }
+
+  // ── Speech ────────────────────────────────────────────────────────────────
 
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
@@ -369,10 +497,7 @@
     const text = speechQueue.shift();
     try {
       const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "en-US";
-      utter.rate = 0.82;
-      utter.pitch = 0.92;
-      utter.volume = 1.0;
+      utter.lang = "en-US"; utter.rate = 0.82; utter.pitch = 0.92; utter.volume = 1.0;
       const voice = pickEnglishVoice();
       if (voice) utter.voice = voice;
       utter.onend = () => setTimeout(speakNext, 350);
@@ -475,30 +600,22 @@
   }
 
   function announceGame(team, setScore, setJustFinished, matchFinishedNow) {
-    const serverName = "Team " + state.server;
-    const teamName   = "Team " + team;
-    const gameScore  = setScore.a + " to " + setScore.b;
+    const serverName  = "Team " + state.server;
+    const teamName    = "Team " + team;
+    // Score announced from server's perspective first
+    const serverScore = state.server === "A" ? setScore.a : setScore.b;
+    const receiverScore = state.server === "A" ? setScore.b : setScore.a;
+    const gameScore   = serverScore + " to " + receiverScore;
 
     if (matchFinishedNow) {
-      speakSequence([
-        "Game, set and match " + teamName + "!",
-        "Final score, " + finalScoreString()
-      ]);
+      speakSequence(["Game, set and match " + teamName + "!", "Final score, " + finalScoreString()]);
       return;
     }
     if (setJustFinished) {
-      speakSequence([
-        "Set " + teamName + ".",
-        gameScore + ".",
-        serverName + " to serve"
-      ]);
+      speakSequence(["Set " + teamName + ".", gameScore + ".", serverName + " to serve"]);
       return;
     }
-    speakSequence([
-      teamName + " wins the game.",
-      gameScore + ".",
-      serverName + " to serve"
-    ]);
+    speakSequence([teamName + " wins the game.", gameScore + ".", serverName + " to serve"]);
   }
 
   // ── Core logic ────────────────────────────────────────────────────────────
@@ -517,19 +634,16 @@
     let matchFinishedNow = false;
 
     if (setJustFinished) {
-      const wA = setsWon("A");
-      const wB = setsWon("B");
-      if (wA >= 3) {
-        state.matchFinished = true; state.winner = "A"; matchFinishedNow = true;
-      } else if (wB >= 3) {
-        state.matchFinished = true; state.winner = "B"; matchFinishedNow = true;
-      } else if (state.currentSet < 4) {
-        state.currentSet += 1;
-      }
+      const wA = setsWon("A"), wB = setsWon("B");
+      if (wA >= 3) { state.matchFinished = true; state.winner = "A"; matchFinishedNow = true; }
+      else if (wB >= 3) { state.matchFinished = true; state.winner = "B"; matchFinishedNow = true; }
+      else if (state.currentSet < 4) state.currentSet += 1;
     }
 
     if (!matchFinishedNow) {
       state.server = state.server === "A" ? "B" : "A";
+      // A starts left, B starts right
+      state.servePos = state.server === "A" ? "left" : "right";
     }
 
     announceGame(team, setScoreSnapshot, setJustFinished, matchFinishedNow);
@@ -570,7 +684,10 @@
     if (state.mode === "golden") incrementAGolden();
     else incrementANormal();
     vibrate(25);
-    if (JSON.stringify(state.sets) === beforeSets && !state.matchFinished) announcePoint();
+    const gameEnded = JSON.stringify(state.sets) !== beforeSets;
+    // Only toggle servePos if no game ended (winGame already resets it)
+    if (!gameEnded) state.servePos = state.servePos === "left" ? "right" : "left";
+    if (!gameEnded && !state.matchFinished) announcePoint();
     render();
   }
 
@@ -581,7 +698,10 @@
     if (state.mode === "golden") incrementBGolden();
     else incrementBNormal();
     vibrate(25);
-    if (JSON.stringify(state.sets) === beforeSets && !state.matchFinished) announcePoint();
+    const gameEnded = JSON.stringify(state.sets) !== beforeSets;
+    // Only toggle servePos if no game ended (winGame already resets it)
+    if (!gameEnded) state.servePos = state.servePos === "left" ? "right" : "left";
+    if (!gameEnded && !state.matchFinished) announcePoint();
     render();
   }
 
@@ -589,6 +709,7 @@
     saveHistory();
     state.mode = state.mode === "golden" ? "normal" : "golden";
     state.pointA = 0; state.pointB = 0;
+    state.servePos = state.server === "A" ? "left" : "right";
     vibrate(35); render();
     speak(state.mode === "golden" ? "Golden point" : "Normal mode");
   }
@@ -608,6 +729,7 @@
 
   function toggleServer() {
     state.server = state.server === "A" ? "B" : "A";
+    state.servePos = state.server === "A" ? "left" : "right";
     vibrate(35); render();
     speak("Team " + state.server + " to serve");
   }
@@ -620,6 +742,7 @@
     state.matchFinished = false;
     state.winner = null;
     state.server = "A";
+    state.servePos = "left"; // A starts left, B starts right
     vibrate([40,40,40]); render();
     speak("Match reset");
   }
@@ -653,6 +776,10 @@
     els.modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
     els.audioBtn.textContent = state.audioEnabled ? "A" : "M";
     els.serverBtn.textContent = "Srv " + state.server;
+    // Grey out server button once a point has been played
+    const pointsPlayed = state.pointA + state.pointB > 0;
+    if (pointsPlayed) els.serverBtn.classList.add("disabled-btn");
+    else els.serverBtn.classList.remove("disabled-btn");
 
     if (state.locked || state.matchFinished) {
       els.scoreA.classList.add("disabled");
@@ -669,13 +796,15 @@
       els.overlayWinner.textContent = "🏆 Team " + state.winner + " wins!";
       const finalSets = state.sets
         .filter((s, i) => i <= state.currentSet)
-        .map(s => s.a + "-" + s.b)
-        .join("  ");
+        .map(s => s.a + "-" + s.b).join("  ");
       els.overlayScore.textContent = finalSets;
       els.matchOverlay.classList.add("show");
     } else {
       els.matchOverlay.classList.remove("show");
     }
+
+    // Update server ball after DOM paint
+    requestAnimationFrame(updateServerBall);
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
@@ -694,20 +823,21 @@
     els.resetBtn.classList.add("holding");
     resetTimer = setTimeout(doReset, 800);
   }, { passive: false });
-
-  els.resetBtn.addEventListener("touchend", function () {
-    clearTimeout(resetTimer);
-    els.resetBtn.classList.remove("holding");
+  els.resetBtn.addEventListener("touchend", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
+  els.resetBtn.addEventListener("touchcancel", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
+  // Desktop support for R button
+  els.resetBtn.addEventListener("mousedown", function () {
+    els.resetBtn.classList.add("holding");
+    resetTimer = setTimeout(doReset, 800);
   });
-
-  els.resetBtn.addEventListener("touchcancel", function () {
-    clearTimeout(resetTimer);
-    els.resetBtn.classList.remove("holding");
-  });
+  els.resetBtn.addEventListener("mouseup", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
+  els.resetBtn.addEventListener("mouseleave", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
 
   if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
     window.speechSynthesis.onvoiceschanged = function () {};
   }
+
+  window.addEventListener("resize", () => requestAnimationFrame(updateServerBall));
 
   render();
 })();
