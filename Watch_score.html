@@ -409,7 +409,8 @@
     audioEnabled: true,
     server: "A",
     winner: null,
-    servePos: "left"  // left or right, alternates every point
+    servePos: "left",  // left or right, alternates every point
+    matchStarted: false  // true after first point ever played
   };
 
   const history = [];
@@ -680,6 +681,7 @@
   function incrementA() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
+    state.matchStarted = true;
     const beforeSets = JSON.stringify(state.sets);
     if (state.mode === "golden") incrementAGolden();
     else incrementANormal();
@@ -694,6 +696,7 @@
   function incrementB() {
     if (state.locked || state.matchFinished) return;
     saveHistory();
+    state.matchStarted = true;
     const beforeSets = JSON.stringify(state.sets);
     if (state.mode === "golden") incrementBGolden();
     else incrementBNormal();
@@ -742,7 +745,8 @@
     state.matchFinished = false;
     state.winner = null;
     state.server = "A";
-    state.servePos = "left"; // A starts left, B starts right
+    state.servePos = "left";
+    state.matchStarted = false;
     vibrate([40,40,40]); render();
     speak("Match reset");
   }
@@ -776,9 +780,8 @@
     els.modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
     els.audioBtn.textContent = state.audioEnabled ? "A" : "M";
     els.serverBtn.textContent = "Srv " + state.server;
-    // Grey out server button once a point has been played
-    const pointsPlayed = state.pointA + state.pointB > 0;
-    if (pointsPlayed) els.serverBtn.classList.add("disabled-btn");
+    // Grey out server button permanently once match has started
+    if (state.matchStarted) els.serverBtn.classList.add("disabled-btn");
     else els.serverBtn.classList.remove("disabled-btn");
 
     if (state.locked || state.matchFinished) {
