@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V28</title>
+<title>PadelTap V33</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -105,6 +105,16 @@
     height:30px;
     border-radius:16px;
     font-size:14px;
+  }
+
+  .lang{
+    top:4%;
+    left:79%;
+    width:38px;
+    height:30px;
+    border-radius:16px;
+    font-size:11px;
+    font-weight:bold;
   }
 
   .server{
@@ -338,16 +348,28 @@
     padding:10px 32px;
     cursor:pointer;
   }
+  /* ── Set/Match point banner ── */
+  #banner{
+    position:absolute; top:0; left:0; right:0;
+    background:rgba(242,195,0,0.95); color:#123047;
+    font-size:11px; font-weight:bold; text-align:center;
+    padding:3px 0; z-index:50;
+    transform:translateY(-100%);
+    transition:transform 0.3s ease;
+  }
+  #banner.show{ transform:translateY(0); }
 </style>
 </head>
 <body>
 
 <div id="app">
+  <div id="banner"></div>
   <div class="pill mode" id="modeBtn">G</div>
   <div class="modeLabel" id="modeLabel">G - Golden</div>
 
   <div class="circle-btn lock" id="lockBtn">L</div>
   <div class="pill audio" id="audioBtn">A</div>
+  <div class="pill lang" id="langBtn">EN</div>
 
   <div class="pill server" id="serverBtn">Srv A</div>
 
@@ -358,9 +380,9 @@
       <!-- Header row -->
       <div class="setsRow">
         <div class="headLabel"></div>
-        <div class="setsCell setsHead">1</div>
-        <div class="setsCell setsHead">2</div>
-        <div class="setsCell setsHead">3</div>
+        <div class="setsCell setsHead" id="setH1">1</div>
+        <div class="setsCell setsHead" id="setH2">2</div>
+        <div class="setsCell setsHead" id="setH3">3</div>
       </div>
       <!-- Row A -->
       <div class="setsRow" id="rowA">
@@ -397,452 +419,218 @@
 </div>
 
 <script>
-(function () {
-  const state = {
-    pointA: 0,
-    pointB: 0,
-    sets: Array(5).fill(null).map(() => ({ a: 0, b: 0 })),
-    currentSet: 0,
-    locked: false,
-    mode: "golden",
-    matchFinished: false,
-    audioEnabled: true,
-    server: "A",
-    winner: null,
-    servePos: "left",  // left or right, alternates every point
-    matchStarted: false  // true after first point ever played
-  };
+(function(){
 
-  const history = [];
-  let resetTimer = null;
-  let speechQueue = [];
+const T={
+  EN:{love:"love",f15:"15",f30:"30",f40:"40",deuce:"Deuce",advServer:"Advantage server",advReceiver:"Advantage receiver",winsGame:(t,s,srv)=>[`Team ${t} wins the game.`,`${s}.`,`Team ${srv} to serve`],winsSet:(t,s,srv)=>[`Set Team ${t}.`,`${s}.`,`Team ${srv} to serve`],winsMatch:(t,s)=>[`Game set and match Team ${t}!`,`Final score ${s}`],setPoint:(t)=>`Set point Team ${t}`,matchPoint:(t)=>`Match point Team ${t}`,undo:"Undo",reset:"Match reset",locked:"Locked",unlocked:"Unlocked",golden:"Golden point",normal:"Normal mode",audioOn:"Audio on",srvTeam:(t)=>`Team ${t} to serve`},
+  FR:{love:"zéro",f15:"quinze",f30:"trente",f40:"quarante",deuce:"Égalité",advServer:"Avantage serveur",advReceiver:"Avantage receveur",winsGame:(t,s,srv)=>[`Jeu équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsSet:(t,s,srv)=>[`Jeu et set équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsMatch:(t,s)=>[`Jeu set et match équipe ${t} !`,`Score final ${s}`],setPoint:(t)=>`Balle de set équipe ${t}`,matchPoint:(t)=>`Balle de match équipe ${t}`,undo:"Annuler",reset:"Match réinitialisé",locked:"Verrouillé",unlocked:"Déverrouillé",golden:"Point d'or",normal:"Mode normal",audioOn:"Audio activé",srvTeam:(t)=>`Équipe ${t} au service`}
+};
 
-  const els = {
-    scoreA: document.getElementById("scoreA"),
-    scoreB: document.getElementById("scoreB"),
-    modeBtn: document.getElementById("modeBtn"),
-    modeLabel: document.getElementById("modeLabel"),
-    lockBtn: document.getElementById("lockBtn"),
-    audioBtn: document.getElementById("audioBtn"),
-    serverBtn: document.getElementById("serverBtn"),
-    resetBtn: document.getElementById("resetBtn"),
-    undoBtn: document.getElementById("undoBtn"),
-    setLabel: document.getElementById("setLabel"),
-    setA1: document.getElementById("setA1"),
-    setA2: document.getElementById("setA2"),
-    setA3: document.getElementById("setA3"),
-    setB1: document.getElementById("setB1"),
-    setB2: document.getElementById("setB2"),
-    setB3: document.getElementById("setB3"),
-    matchOverlay: document.getElementById("matchOverlay"),
-    overlayWinner: document.getElementById("overlayWinner"),
-    overlayScore: document.getElementById("overlayScore"),
-    resetOverlayBtn: document.getElementById("resetOverlayBtn"),
-    serverBall: document.getElementById("serverBall")
-  };
+const state={pointA:0,pointB:0,sets:Array(5).fill(null).map(()=>({a:0,b:0})),currentSet:0,locked:false,mode:"golden",matchFinished:false,audioEnabled:true,server:"A",winner:null,servePos:"left",matchStarted:false,lang:"EN"};
+const history=[];
+let resetTimer=null,speechQueue=[],bannerTimer=null;
 
-  // ── Server ball position ──────────────────────────────────────────────────
-  // Server A → ball top-left of scoreA
-  // Server B → ball bottom-right of scoreB
-  // After each game it alternates
+const ids=id=>document.getElementById(id);
+const els={
+  scoreA:ids("scoreA"),scoreB:ids("scoreB"),
+  modeBtn:ids("modeBtn"),modeLabel:ids("modeLabel"),
+  lockBtn:ids("lockBtn"),audioBtn:ids("audioBtn"),langBtn:ids("langBtn"),
+  serverBtn:ids("serverBtn"),resetBtn:ids("resetBtn"),undoBtn:ids("undoBtn"),
+  setLabel:ids("setLabel"),
+  setH1:ids("setH1"),setH2:ids("setH2"),setH3:ids("setH3"),
+  setA1:ids("setA1"),setA2:ids("setA2"),setA3:ids("setA3"),
+  setB1:ids("setB1"),setB2:ids("setB2"),setB3:ids("setB3"),
+  matchOverlay:ids("matchOverlay"),overlayWinner:ids("overlayWinner"),
+  overlayScore:ids("overlayScore"),resetOverlayBtn:ids("resetOverlayBtn"),
+  banner:ids("banner")
+};
 
-  function updateServerBall() {
-    const ball = els.serverBall;
-    if (state.matchFinished) { ball.style.display = "none"; return; }
-    ball.style.display = "block";
+// ── Visible set window (sliding) ──────────────────────────────────────────────
+function visibleStart(cs){return cs<=2?0:cs===3?1:2;}
+function visibleIndices(cs){const s=visibleStart(cs);return[s,s+1,s+2];}
 
-    const scoreAEl = els.scoreA;
-    const scoreBEl = els.scoreB;
-    const appEl = document.getElementById("app");
-    const aR = scoreAEl.getBoundingClientRect();
-    const bR = scoreBEl.getBoundingClientRect();
-    const ar = appEl.getBoundingClientRect();
-    const sz = 22, off = 4;
+// ── Speech ────────────────────────────────────────────────────────────────────
+function pickVoice(lang){const v=speechSynthesis.getVoices()||[];if(lang==="FR")return v.find(x=>/fr[-_]?FR/i.test(x.lang))||v.find(x=>/^fr/i.test(x.lang))||null;return v.find(x=>/en[-_]?US/i.test(x.lang)&&/google|samsung/i.test(x.name))||v.find(x=>/^en/i.test(x.lang))||null;}
 
-    // Server A = top circle (grey), ball on top edge, left or right
-    // Server B = bottom circle (yellow), ball on bottom edge, left or right
-    // servePos = "left" or "right", alternates every point
-    // Server A starts LEFT each new game
-    // Server B starts RIGHT each new game
-    let left, top;
-    if (state.server === "A") {
-      top  = (aR.top - ar.top) - sz/2 + off;
-      left = state.servePos === "left"
-        ? (aR.left  - ar.left) - sz/2 + off
-        : (aR.right - ar.left) - sz/2 - off;
-    } else {
-      top  = (bR.bottom - ar.top) - sz/2 - off;
-      left = state.servePos === "right"
-        ? (bR.right - ar.left) - sz/2 - off
-        : (bR.left  - ar.left) - sz/2 + off;
+function speakNext(){
+  if(!speechQueue.length||!state.audioEnabled){speechQueue=[];return;}
+  const text=speechQueue.shift();
+  try{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=state.lang==="FR"?"fr-FR":"en-US";
+    u.rate=0.82;u.pitch=0.92;u.volume=1.0;
+    const v=pickVoice(state.lang);if(v)u.voice=v;
+    u.onend=()=>setTimeout(speakNext,350);
+    u.onerror=()=>setTimeout(speakNext,350);
+    speechSynthesis.speak(u);
+  }catch(_){setTimeout(speakNext,100);}
+}
+
+function speakSequence(phrases){
+  if(!state.audioEnabled)return;
+  speechSynthesis.cancel();
+  speechQueue=[...phrases];
+  setTimeout(speakNext,200);
+}
+function speak(text){speakSequence([text]);}
+
+// ── Banner ────────────────────────────────────────────────────────────────────
+function showBanner(text){
+  els.banner.textContent=text;
+  els.banner.classList.add("show");
+  clearTimeout(bannerTimer);
+  bannerTimer=setTimeout(()=>els.banner.classList.remove("show"),2500);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function vibrate(p){try{if(navigator.vibrate)navigator.vibrate(p||30);}catch(_){}}
+function cloneState(){return JSON.parse(JSON.stringify(state));}
+function saveHistory(){history.push(cloneState());if(history.length>100)history.shift();}
+function bindTap(el,fn){if(!el)return;let touched=false;el.addEventListener("touchstart",e=>{touched=true;e.preventDefault();fn();},{passive:false});el.addEventListener("click",e=>{if(touched){touched=false;return;}e.preventDefault();fn();});}
+function t(){return T[state.lang];}
+function scoreJoin(a,b){return state.lang==="FR"?`${a} à ${b}`:`${a} to ${b}`;}
+function tennisWord(v){if(v===0)return t().love;if(v===1)return t().f15;if(v===2)return t().f30;return t().f40;}
+function isSetFinished(s){return(s.a>=6||s.b>=6)&&Math.abs(s.a-s.b)>=2;}
+function setsWon(team){return state.sets.filter(s=>{if(!isSetFinished(s))return false;return team==="A"?s.a>s.b:s.b>s.a;}).length;}
+
+// ── Game score for announce ───────────────────────────────────────────────────
+function currentGameScoreStr(){
+  const a=state.pointA,b=state.pointB;
+  if(state.mode==="normal"&&a>=3&&b>=3){if(a===b)return t().deuce;const adv=a>b?"A":"B";return adv===state.server?t().advServer:t().advReceiver;}
+  const aT=tennisWord(a),bT=tennisWord(b);
+  const first=state.server==="A"?aT:bT,second=state.server==="A"?bT:aT;
+  const allW=state.lang==="FR"?"partout":"all";
+  return first===second?`${first} ${allW}`:`${first} ${second}`;
+}
+
+// ── Set/Match point ───────────────────────────────────────────────────────────
+function isOnePointFromGame(team){const a=state.pointA,b=state.pointB;if(team==="A"){if(state.mode==="golden")return a===3;return(a===3&&b<3)||a===4;}if(state.mode==="golden")return b===3;return(b===3&&a<3)||b===4;}
+function isOneGameFromSet(team){const c=state.sets[state.currentSet];return team==="A"?(c.a===5&&c.a>c.b):(c.b===5&&c.b>c.a);}
+
+function checkSpecialPoint(){
+  const sA=setsWon("A"),sB=setsWon("B");
+  const spA=isOneGameFromSet("A")&&isOnePointFromGame("A");
+  const spB=isOneGameFromSet("B")&&isOnePointFromGame("B");
+  const mpA=sA===2&&spA,mpB=sB===2&&spB;
+  const gs=currentGameScoreStr();
+  if(mpA){const l=t().matchPoint("A");showBanner(l);speakSequence([gs,l]);return true;}
+  if(mpB){const l=t().matchPoint("B");showBanner(l);speakSequence([gs,l]);return true;}
+  if(spA){const l=t().setPoint("A");showBanner(l);speakSequence([gs,l]);return true;}
+  if(spB){const l=t().setPoint("B");showBanner(l);speakSequence([gs,l]);return true;}
+  return false;
+}
+
+// ── Score display ─────────────────────────────────────────────────────────────
+function getDisplayScore(team){if(state.matchFinished)return"0";const a=state.pointA,b=state.pointB;if(state.mode==="golden"){const l=["0","15","30","40"];return team==="A"?l[Math.min(a,3)]:l[Math.min(b,3)];}if(a>=3&&b>=3){if(a===b)return"D";if(team==="A")return a>b?"A":"40";return b>a?"A":"40";}const l=["0","15","30","40","A"];return team==="A"?l[a]:l[b];}
+
+// ── Game announce ─────────────────────────────────────────────────────────────
+function finalScoreStr(){const lim=Math.min(state.currentSet,4);return Array.from({length:lim+1},(_,i)=>scoreJoin(state.sets[i].a,state.sets[i].b)).join(", ");}
+function announceGame(team,snap,setDone,matchNow){const srv=state.server;const gs=srv==="A"?scoreJoin(snap.a,snap.b):scoreJoin(snap.b,snap.a);if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}if(setDone){speakSequence(t().winsSet(team,gs,srv));return;}speakSequence(t().winsGame(team,gs,srv));}
+
+// ── Core logic ────────────────────────────────────────────────────────────────
+function winGame(team){if(state.matchFinished)return;const cur=state.sets[state.currentSet];if(team==="A")cur.a++;else cur.b++;const snap={a:cur.a,b:cur.b};state.pointA=0;state.pointB=0;const setDone=isSetFinished(cur);let matchNow=false;if(setDone){const wA=setsWon("A"),wB=setsWon("B");if(wA>=3){state.matchFinished=true;state.winner="A";matchNow=true;}else if(wB>=3){state.matchFinished=true;state.winner="B";matchNow=true;}else if(state.currentSet<4)state.currentSet++;}if(!matchNow){state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";}announceGame(team,snap,setDone,matchNow);}
+
+function incrementA(){if(state.locked||state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);if(state.mode==="golden"){if(state.pointA<=2)state.pointA++;else winGame("A");}else{const a=state.pointA,b=state.pointB;if(a<3)state.pointA++;else if(a===3&&b<3)winGame("A");else if(a===3&&b===3)state.pointA=4;else if(a===4&&b===3)winGame("A");else if(a===3&&b===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
+function incrementB(){if(state.locked||state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);if(state.mode==="golden"){if(state.pointB<=2)state.pointB++;else winGame("B");}else{const a=state.pointA,b=state.pointB;if(b<3)state.pointB++;else if(b===3&&a<3)winGame("B");else if(b===3&&a===3)state.pointB=4;else if(b===4&&a===3)winGame("B");else if(b===3&&a===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
+
+function toggleMode(){saveHistory();state.mode=state.mode==="golden"?"normal":"golden";state.pointA=0;state.pointB=0;state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(state.mode==="golden"?t().golden:t().normal);}
+function toggleLock(){state.locked=!state.locked;vibrate(35);render();speak(state.locked?t().locked:t().unlocked);}
+function toggleAudio(){state.audioEnabled=!state.audioEnabled;vibrate(35);render();if(state.audioEnabled)speak(t().audioOn);}
+function toggleLang(){state.lang=state.lang==="EN"?"FR":"EN";vibrate(35);render();}
+function toggleServer(){if(state.matchStarted)return;state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(t().srvTeam(state.server));}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="left";state.matchStarted=false;vibrate([40,40,40]);render();speak(t().reset);}
+function doUndo(){if(!history.length)return;const pA=state.audioEnabled,pL=state.lang,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioEnabled=pA;state.lang=pL;vibrate([30,30]);render();speak(t().undo);}
+
+// ── Server ball ───────────────────────────────────────────────────────────────
+function updateServerBall(){
+  const b=document.getElementById("serverBall");
+  if(!b){return;}
+  if(state.matchFinished){b.style.display="none";return;}
+  b.style.display="block";
+  const aR=els.scoreA.getBoundingClientRect();
+  const bR=els.scoreB.getBoundingClientRect();
+  const ar=document.getElementById("app").getBoundingClientRect();
+  const sz=22,off=4;
+  let left,top;
+  if(state.server==="A"){
+    top=(aR.top-ar.top)-sz/2+off;
+    left=state.servePos==="left"?(aR.left-ar.left)-sz/2+off:(aR.right-ar.left)-sz/2-off;
+  }else{
+    top=(bR.bottom-ar.top)-sz/2-off;
+    left=state.servePos==="right"?(bR.right-ar.left)-sz/2-off:(bR.left-ar.left)-sz/2+off;
+  }
+  b.style.left=left+"px";
+  b.style.top=top+"px";
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  els.scoreA.textContent=getDisplayScore("A");
+  els.scoreB.textContent=getDisplayScore("B");
+
+  // Sliding window for sets
+  const vi=visibleIndices(state.currentSet);
+  if(els.setH1)els.setH1.textContent=(vi[0]+1);
+  if(els.setH2)els.setH2.textContent=(vi[1]+1);
+  if(els.setH3)els.setH3.textContent=(vi[2]+1);
+
+  const cellsA=[els.setA1,els.setA2,els.setA3];
+  const cellsB=[els.setB1,els.setB2,els.setB3];
+  vi.forEach((si,col)=>{
+    const active=si===state.currentSet;
+    if(cellsA[col]){
+      cellsA[col].textContent=state.sets[si].a;
+      cellsA[col].style.fontSize=active?"22px":"16px";
+      cellsA[col].style.opacity=active?"1":"0.4";
     }
-    ball.style.left = left + "px";
-    ball.style.top  = top  + "px";
-  }
-
-  // ── Speech ────────────────────────────────────────────────────────────────
-
-  function pickEnglishVoice() {
-    const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
-    if (!voices || !voices.length) return null;
-    return (
-      voices.find(v => /en[-_]?US/i.test(v.lang) && /google|samsung|english|us/i.test(v.name)) ||
-      voices.find(v => /en[-_]?GB/i.test(v.lang)) ||
-      voices.find(v => /^en/i.test(v.lang)) ||
-      null
-    );
-  }
-
-  function speakNext() {
-    if (!speechQueue.length || !state.audioEnabled) { speechQueue = []; return; }
-    const text = speechQueue.shift();
-    try {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "en-US"; utter.rate = 0.82; utter.pitch = 0.92; utter.volume = 1.0;
-      const voice = pickEnglishVoice();
-      if (voice) utter.voice = voice;
-      utter.onend = () => setTimeout(speakNext, 350);
-      utter.onerror = () => setTimeout(speakNext, 350);
-      speechSynthesis.speak(utter);
-    } catch (_) { speakNext(); }
-  }
-
-  function speakSequence(phrases) {
-    if (!state.audioEnabled) return;
-    window.speechSynthesis.cancel();
-    speechQueue = [...phrases];
-    speakNext();
-  }
-
-  function speak(text) { speakSequence([text]); }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function vibrate(pattern) {
-    try { if (navigator.vibrate) navigator.vibrate(pattern || 30); } catch (_) {}
-  }
-
-  function cloneState() { return JSON.parse(JSON.stringify(state)); }
-
-  function saveHistory() {
-    history.push(cloneState());
-    if (history.length > 100) history.shift();
-  }
-
-  function bindTap(el, handler) {
-    let touched = false;
-    el.addEventListener("touchstart", function (e) {
-      touched = true; e.preventDefault(); handler();
-    }, { passive: false });
-    el.addEventListener("click", function (e) {
-      if (touched) { touched = false; return; }
-      e.preventDefault(); handler();
-    });
-  }
-
-  function tennisWord(v) {
-    if (v === 0) return "love";
-    if (v === 1) return "15";
-    if (v === 2) return "30";
-    return "40";
-  }
-
-  function isSetFinished(s) {
-    return (s.a >= 6 || s.b >= 6) && Math.abs(s.a - s.b) >= 2;
-  }
-
-  function setsWon(team) {
-    return state.sets.filter(s => {
-      if (!isSetFinished(s)) return false;
-      return team === "A" ? s.a > s.b : s.b > s.a;
-    }).length;
-  }
-
-  function getDisplayScore(team) {
-    if (state.matchFinished) return "0";
-    const a = state.pointA, b = state.pointB;
-    if (state.mode === "golden") {
-      const labels = ["0","15","30","40"];
-      return team === "A" ? labels[Math.min(a,3)] : labels[Math.min(b,3)];
+    if(cellsB[col]){
+      cellsB[col].textContent=state.sets[si].b;
+      cellsB[col].style.fontSize=active?"22px":"16px";
+      cellsB[col].style.opacity=active?"1":"0.4";
     }
-    if (a >= 3 && b >= 3) {
-      if (a === b) return "D";
-      if (team === "A") return a > b ? "A" : "40";
-      return b > a ? "A" : "40";
-    }
-    const labels = ["0","15","30","40","A"];
-    return team === "A" ? labels[a] : labels[b];
-  }
-
-  // ── Announce ──────────────────────────────────────────────────────────────
-
-  function announcePoint() {
-    if (state.matchFinished) return;
-    if (state.mode === "normal" && state.pointA >= 3 && state.pointB >= 3) {
-      if (state.pointA === state.pointB) { speak("Deuce"); return; }
-      const advTeam = state.pointA > state.pointB ? "A" : "B";
-      speak(advTeam === state.server ? "Advantage, server" : "Advantage, receiver");
-      return;
-    }
-    const aText = tennisWord(state.pointA);
-    const bText = tennisWord(state.pointB);
-    const first  = state.server === "A" ? aText : bText;
-    const second = state.server === "A" ? bText : aText;
-    speak(first === second ? first + ", all" : first + ", " + second);
-  }
-
-  function finalScoreString() {
-    const limit = Math.min(state.currentSet, 4);
-    const arr = [];
-    for (let i = 0; i <= limit; i++) {
-      arr.push(state.sets[i].a + " to " + state.sets[i].b);
-    }
-    return arr.join(", ");
-  }
-
-  function announceGame(team, setScore, setJustFinished, matchFinishedNow) {
-    const serverName  = "Team " + state.server;
-    const teamName    = "Team " + team;
-    // Score announced from server's perspective first
-    const serverScore = state.server === "A" ? setScore.a : setScore.b;
-    const receiverScore = state.server === "A" ? setScore.b : setScore.a;
-    const gameScore   = serverScore + " to " + receiverScore;
-
-    if (matchFinishedNow) {
-      speakSequence(["Game, set and match " + teamName + "!", "Final score, " + finalScoreString()]);
-      return;
-    }
-    if (setJustFinished) {
-      speakSequence(["Set " + teamName + ".", gameScore + ".", serverName + " to serve"]);
-      return;
-    }
-    speakSequence([teamName + " wins the game.", gameScore + ".", serverName + " to serve"]);
-  }
-
-  // ── Core logic ────────────────────────────────────────────────────────────
-
-  function winGame(team) {
-    if (state.matchFinished) return;
-    const current = state.sets[state.currentSet];
-    if (team === "A") current.a += 1;
-    else current.b += 1;
-
-    const setScoreSnapshot = { a: current.a, b: current.b };
-    state.pointA = 0;
-    state.pointB = 0;
-
-    const setJustFinished = isSetFinished(current);
-    let matchFinishedNow = false;
-
-    if (setJustFinished) {
-      const wA = setsWon("A"), wB = setsWon("B");
-      if (wA >= 3) { state.matchFinished = true; state.winner = "A"; matchFinishedNow = true; }
-      else if (wB >= 3) { state.matchFinished = true; state.winner = "B"; matchFinishedNow = true; }
-      else if (state.currentSet < 4) state.currentSet += 1;
-    }
-
-    if (!matchFinishedNow) {
-      state.server = state.server === "A" ? "B" : "A";
-      // A starts left, B starts right
-      state.servePos = state.server === "A" ? "left" : "right";
-    }
-
-    announceGame(team, setScoreSnapshot, setJustFinished, matchFinishedNow);
-  }
-
-  function incrementAGolden() {
-    if (state.pointA <= 2) { state.pointA += 1; return; }
-    winGame("A");
-  }
-
-  function incrementBGolden() {
-    if (state.pointB <= 2) { state.pointB += 1; return; }
-    winGame("B");
-  }
-
-  function incrementANormal() {
-    const a = state.pointA, b = state.pointB;
-    if (a < 3)             { state.pointA += 1; return; }
-    if (a === 3 && b < 3)  { winGame("A"); return; }
-    if (a === 3 && b === 3){ state.pointA = 4; return; }
-    if (a === 4 && b === 3){ winGame("A"); return; }
-    if (a === 3 && b === 4){ state.pointA = 3; state.pointB = 3; }
-  }
-
-  function incrementBNormal() {
-    const a = state.pointA, b = state.pointB;
-    if (b < 3)             { state.pointB += 1; return; }
-    if (b === 3 && a < 3)  { winGame("B"); return; }
-    if (b === 3 && a === 3){ state.pointB = 4; return; }
-    if (b === 4 && a === 3){ winGame("B"); return; }
-    if (b === 3 && a === 4){ state.pointA = 3; state.pointB = 3; }
-  }
-
-  function incrementA() {
-    if (state.locked || state.matchFinished) return;
-    saveHistory();
-    state.matchStarted = true;
-    const beforeSets = JSON.stringify(state.sets);
-    if (state.mode === "golden") incrementAGolden();
-    else incrementANormal();
-    vibrate(25);
-    const gameEnded = JSON.stringify(state.sets) !== beforeSets;
-    // Only toggle servePos if no game ended (winGame already resets it)
-    if (!gameEnded) state.servePos = state.servePos === "left" ? "right" : "left";
-    if (!gameEnded && !state.matchFinished) announcePoint();
-    render();
-  }
-
-  function incrementB() {
-    if (state.locked || state.matchFinished) return;
-    saveHistory();
-    state.matchStarted = true;
-    const beforeSets = JSON.stringify(state.sets);
-    if (state.mode === "golden") incrementBGolden();
-    else incrementBNormal();
-    vibrate(25);
-    const gameEnded = JSON.stringify(state.sets) !== beforeSets;
-    // Only toggle servePos if no game ended (winGame already resets it)
-    if (!gameEnded) state.servePos = state.servePos === "left" ? "right" : "left";
-    if (!gameEnded && !state.matchFinished) announcePoint();
-    render();
-  }
-
-  function toggleMode() {
-    saveHistory();
-    state.mode = state.mode === "golden" ? "normal" : "golden";
-    state.pointA = 0; state.pointB = 0;
-    state.servePos = state.server === "A" ? "left" : "right";
-    vibrate(35); render();
-    speak(state.mode === "golden" ? "Golden point" : "Normal mode");
-  }
-
-  function toggleLock() {
-    state.locked = !state.locked;
-    vibrate(35); render();
-    speak(state.locked ? "Locked" : "Unlocked");
-  }
-
-  function toggleAudio() {
-    const was = state.audioEnabled;
-    state.audioEnabled = !state.audioEnabled;
-    vibrate(35); render();
-    if (!was && state.audioEnabled) speak("Audio on");
-  }
-
-  function toggleServer() {
-    state.server = state.server === "A" ? "B" : "A";
-    state.servePos = state.server === "A" ? "left" : "right";
-    vibrate(35); render();
-    speak("Team " + state.server + " to serve");
-  }
-
-  function doReset() {
-    saveHistory();
-    state.pointA = 0; state.pointB = 0;
-    state.sets = Array(5).fill(null).map(() => ({ a: 0, b: 0 }));
-    state.currentSet = 0;
-    state.matchFinished = false;
-    state.winner = null;
-    state.server = "A";
-    state.servePos = "left";
-    state.matchStarted = false;
-    vibrate([40,40,40]); render();
-    speak("Match reset");
-  }
-
-  function doUndo() {
-    if (!history.length) return;
-    const prevAudio = state.audioEnabled;
-    const prev = history.pop();
-    Object.keys(state).forEach(k => delete state[k]);
-    Object.assign(state, prev);
-    state.audioEnabled = prevAudio;
-    vibrate([30,30]); render();
-    speak("Undo");
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  function render() {
-    els.scoreA.textContent = getDisplayScore("A");
-    els.scoreB.textContent = getDisplayScore("B");
-
-    els.setA1.textContent = state.sets[0].a;
-    els.setA2.textContent = state.sets[1].a;
-    els.setA3.textContent = state.sets[2].a;
-    els.setB1.textContent = state.sets[0].b;
-    els.setB2.textContent = state.sets[1].b;
-    els.setB3.textContent = state.sets[2].b;
-
-    els.setLabel.textContent = "SET " + Math.min(state.currentSet + 1, 5);
-    els.modeBtn.textContent = state.mode === "golden" ? "G" : "N";
-    els.modeLabel.textContent = state.mode === "golden" ? "G - Golden" : "N - Normal";
-    els.audioBtn.textContent = state.audioEnabled ? "A" : "M";
-    els.serverBtn.textContent = "Srv " + state.server;
-    // Grey out server button permanently once match has started
-    if (state.matchStarted) els.serverBtn.classList.add("disabled-btn");
-    else els.serverBtn.classList.remove("disabled-btn");
-
-    if (state.locked || state.matchFinished) {
-      els.scoreA.classList.add("disabled");
-      els.scoreB.classList.add("disabled");
-    } else {
-      els.scoreA.classList.remove("disabled");
-      els.scoreB.classList.remove("disabled");
-    }
-
-    if (state.locked) els.lockBtn.classList.add("locked");
-    else els.lockBtn.classList.remove("locked");
-
-    if (state.matchFinished && state.winner) {
-      els.overlayWinner.textContent = "🏆 Team " + state.winner + " wins!";
-      const finalSets = state.sets
-        .filter((s, i) => i <= state.currentSet)
-        .map(s => s.a + "-" + s.b).join("  ");
-      els.overlayScore.textContent = finalSets;
-      els.matchOverlay.classList.add("show");
-    } else {
-      els.matchOverlay.classList.remove("show");
-    }
-
-    // Update server ball after DOM paint
-    requestAnimationFrame(updateServerBall);
-  }
-
-  // ── Events ────────────────────────────────────────────────────────────────
-
-  bindTap(els.scoreA, incrementA);
-  bindTap(els.scoreB, incrementB);
-  bindTap(els.modeBtn, toggleMode);
-  bindTap(els.lockBtn, toggleLock);
-  bindTap(els.audioBtn, toggleAudio);
-  bindTap(els.serverBtn, toggleServer);
-  bindTap(els.undoBtn, doUndo);
-  bindTap(els.resetOverlayBtn, doReset);
-
-  els.resetBtn.addEventListener("touchstart", function (e) {
-    e.preventDefault();
-    els.resetBtn.classList.add("holding");
-    resetTimer = setTimeout(doReset, 800);
-  }, { passive: false });
-  els.resetBtn.addEventListener("touchend", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
-  els.resetBtn.addEventListener("touchcancel", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
-  // Desktop support for R button
-  els.resetBtn.addEventListener("mousedown", function () {
-    els.resetBtn.classList.add("holding");
-    resetTimer = setTimeout(doReset, 800);
   });
-  els.resetBtn.addEventListener("mouseup", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
-  els.resetBtn.addEventListener("mouseleave", function () { clearTimeout(resetTimer); els.resetBtn.classList.remove("holding"); });
 
-  if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = function () {};
+  els.setLabel.textContent="SET "+(Math.min(state.currentSet+1,5));
+  els.modeBtn.textContent=state.mode==="golden"?"G":"N";
+  if(els.modeLabel)els.modeLabel.textContent=state.mode==="golden"?"G - Golden":"N - Normal";
+  els.lockBtn.textContent=state.locked?"🔒":"🔓";
+  els.audioBtn.textContent=state.audioEnabled?"🔊":"🔇";
+  if(els.langBtn)els.langBtn.textContent=state.lang;
+  if(els.serverBtn)els.serverBtn.textContent="Srv "+state.server;
+  if(els.serverBtn)els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
+
+  const dis=state.locked||state.matchFinished;
+  els.scoreA.classList.toggle("disabled",dis);
+  els.scoreB.classList.toggle("disabled",dis);
+  els.lockBtn.classList.toggle("locked",state.locked);
+
+  if(state.matchFinished&&state.winner){
+    els.overlayWinner.textContent="🏆 Team "+state.winner+" wins!";
+    els.overlayScore.textContent=state.sets.filter((_,i)=>i<=state.currentSet).map(s=>s.a+"-"+s.b).join("  ");
+    els.matchOverlay.classList.add("show");
+  }else{
+    els.matchOverlay.classList.remove("show");
   }
+  requestAnimationFrame(updateServerBall);
+}
 
-  window.addEventListener("resize", () => requestAnimationFrame(updateServerBall));
+// ── Events ────────────────────────────────────────────────────────────────────
+bindTap(els.scoreA,incrementA);bindTap(els.scoreB,incrementB);
+bindTap(els.modeBtn,toggleMode);bindTap(els.lockBtn,toggleLock);
+bindTap(els.audioBtn,toggleAudio);bindTap(els.langBtn,toggleLang);
+bindTap(els.serverBtn,toggleServer);bindTap(els.undoBtn,doUndo);
+bindTap(els.resetOverlayBtn,doReset);
 
-  render();
+els.resetBtn.addEventListener("touchstart",e=>{e.preventDefault();els.resetBtn.classList.add("holding");resetTimer=setTimeout(doReset,800);},{passive:false});
+els.resetBtn.addEventListener("touchend",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
+els.resetBtn.addEventListener("touchcancel",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
+els.resetBtn.addEventListener("mousedown",()=>{els.resetBtn.classList.add("holding");resetTimer=setTimeout(doReset,800);});
+els.resetBtn.addEventListener("mouseup",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
+els.resetBtn.addEventListener("mouseleave",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
+
+window.addEventListener("resize",()=>requestAnimationFrame(updateServerBall));
+if(window.speechSynthesis&&window.speechSynthesis.onvoiceschanged!==undefined)window.speechSynthesis.onvoiceschanged=()=>{};
+render();
 })();
 </script>
 </body>
