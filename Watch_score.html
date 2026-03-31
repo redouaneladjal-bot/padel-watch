@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V34</title>
+<title>PadelTap V46</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -68,12 +68,25 @@
     border-radius:50%;
   }
 
+  .mode.tb-active{
+    background:rgba(242,195,0,0.35);
+    border-color:var(--yellow);
+    color:var(--yellow);
+  }
+
+  .mode.stb-active{
+    background:rgba(242,195,0,0.6);
+    border-color:var(--yellow);
+    color:var(--yellow);
+  }
+
   .mode{
     top:4%;
-    left:28%;
-    width:60px;
+    left:26%;
+    width:64px;
     height:30px;
-    font-size:14px;
+    font-size:12px;
+    font-weight:bold;
   }
 
   .modeLabel{
@@ -85,26 +98,45 @@
     font-weight:bold;
   }
 
-  .lock{
-    top:4%;
-    left:48%;
-    width:50px;
-    height:50px;
-    font-size:18px;
-  }
-
-  .lock.locked{
-    background:var(--lock);
-    border-color:var(--lockBorder);
-  }
-
   .audio{
     top:4%;
-    left:62%;
+    left:47%;
     width:52px;
     height:30px;
     border-radius:16px;
     font-size:12px;
+  }
+
+  .tbreak-btn{
+    top:19%;
+    left:28%;
+    width:50px;
+    height:24px;
+    border-radius:12px;
+    font-size:10px;
+    font-weight:bold;
+  }
+
+  .tbreak-btn.tb-on{
+    background:rgba(255,140,0,0.5);
+    border-color:#ff8c00;
+    color:#ffd080;
+  }
+
+  .sets-btn{
+    top:4%;
+    left:65%;
+    width:44px;
+    height:30px;
+    border-radius:16px;
+    font-size:10px;
+    font-weight:bold;
+  }
+
+  .sets-btn.bo5{
+    background:rgba(242,195,0,0.3);
+    border-color:var(--yellow);
+    color:var(--yellow);
   }
 
 
@@ -300,7 +332,7 @@
     position:fixed;
     top:0; left:0; right:0; bottom:0;
     width:100%; height:100%;
-    background:rgba(0,0,0,0.85);
+    background:rgba(0,0,0,0.88);
     z-index:100;
     flex-direction:column;
     align-items:center;
@@ -329,6 +361,36 @@
     font-size:16px;
   }
 
+  #overlayHistory{
+    width:100%;
+    margin:4px 0 6px 0;
+    font-size:13px;
+    color:white;
+  }
+  .hist-set-title{
+    color:var(--yellow);
+    font-weight:bold;
+    font-size:12px;
+    margin:6px 0 2px 0;
+    text-align:left;
+  }
+  .hist-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:2px 4px;
+    border-radius:4px;
+    font-size:13px;
+  }
+  .hist-row.winner-a{ background:rgba(233,222,239,0.15); }
+  .hist-row.winner-b{ background:rgba(242,195,0,0.15); }
+  .hist-score{
+    font-weight:bold;
+    font-size:15px;
+    letter-spacing:2px;
+  }
+  .hist-score .ha{ color:var(--grey); }
+  .hist-score .hb{ color:var(--yellow); }
   #matchOverlay .resetOverlayBtn{
     margin-top:8px;
     background:var(--blue);
@@ -357,10 +419,9 @@
 <div id="app">
   <div id="banner"></div>
   <div class="pill mode" id="modeBtn">G</div>
-  <div class="modeLabel" id="modeLabel">G - Golden</div>
-
-  <div class="circle-btn lock" id="lockBtn">L</div>
   <div class="pill audio" id="audioBtn">EN</div>
+  <div class="pill tbreak-btn" id="tbreakBtn">TB</div>
+  <div class="pill sets-btn" id="setsBtn">Set 2</div>
 
   <div class="pill server" id="serverBtn">Srv A</div>
 
@@ -405,7 +466,10 @@
     <h1>MATCH FINI</h1>
     <div class="winner" id="overlayWinner"></div>
     <div class="finalScore" id="overlayScore"></div>
-    <div class="resetOverlayBtn" id="resetOverlayBtn">Reset</div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <div class="resetOverlayBtn" id="undoOverlayBtn">↩ Undo</div>
+      <div class="resetOverlayBtn" id="resetOverlayBtn">Reset</div>
+    </div>
   </div>
 </div>
 
@@ -425,11 +489,12 @@ const AUDIO_MODES = ["EN","FR","MUTE"];
 const state={
   pointA:0,pointB:0,
   sets:Array(5).fill(null).map(()=>({a:0,b:0})),
-  currentSet:0,locked:false,mode:"golden",
+  currentSet:0,gameMode:"golden",tieBreak:false,
   matchFinished:false,
-  server:"A",winner:null,
+  server:"A",winner:null,setsToWin:2,
   servePos:"left",matchStarted:false,
-  audioMode:"EN"  // EN | FR | MUTE
+  audioMode:"EN",  // EN | FR | MUTE
+  gameHistory:[]  // [{setIdx, a, b}] one entry per game played
 };
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
@@ -443,7 +508,7 @@ const ids=id=>document.getElementById(id);
 const els={
   scoreA:ids("scoreA"),scoreB:ids("scoreB"),
   modeBtn:ids("modeBtn"),modeLabel:ids("modeLabel"),
-  lockBtn:ids("lockBtn"),audioBtn:ids("audioBtn"),
+  audioBtn:ids("audioBtn"),
   serverBtn:ids("serverBtn"),resetBtn:ids("resetBtn"),undoBtn:ids("undoBtn"),
   setLabel:ids("setLabel"),
   setH1:ids("setH1"),setH2:ids("setH2"),setH3:ids("setH3"),
@@ -451,6 +516,9 @@ const els={
   setB1:ids("setB1"),setB2:ids("setB2"),setB3:ids("setB3"),
   matchOverlay:ids("matchOverlay"),overlayWinner:ids("overlayWinner"),
   overlayScore:ids("overlayScore"),resetOverlayBtn:ids("resetOverlayBtn"),
+  undoOverlayBtn:ids("undoOverlayBtn"),
+  tbreakBtn:ids("tbreakBtn"),
+  setsBtn:ids("setsBtn"),
   banner:ids("banner")
 };
 
@@ -493,26 +561,61 @@ function saveHistory(){history.push(cloneState());if(history.length>100)history.
 function bindTap(el,fn){if(!el)return;let touched=false;el.addEventListener("touchstart",e=>{touched=true;e.preventDefault();fn();},{passive:false});el.addEventListener("click",e=>{if(touched){touched=false;return;}e.preventDefault();fn();});}
 function scoreJoin(a,b){return lang()==="FR"?`${a} à ${b}`:`${a} to ${b}`;}
 function tennisWord(v){if(v===0)return t().love;if(v===1)return t().f15;if(v===2)return t().f30;return t().f40;}
-function isSetFinished(s){return(s.a>=6||s.b>=6)&&Math.abs(s.a-s.b)>=2;}
+function isSetFinished(s){
+  if(state.tieBreak){
+    // At 7-6 or 6-7 = TB win
+    if((s.a===7&&s.b===6)||(s.a===6&&s.b===7)) return true;
+    // Normal set end (before 6-6)
+    return (s.a>=6||s.b>=6)&&Math.abs(s.a-s.b)>=2&&!(s.a===6&&s.b===6);
+  }
+  return(s.a>=6||s.b>=6)&&Math.abs(s.a-s.b)>=2;
+}
 function setsWon(team){return state.sets.filter(s=>{if(!isSetFinished(s))return false;return team==="A"?s.a>s.b:s.b>s.a;}).length;}
 
 function currentGameScoreStr(){
   const a=state.pointA,b=state.pointB;
-  if(state.mode==="normal"&&a>=3&&b>=3){if(a===b)return t().deuce;const adv=a>b?"A":"B";return adv===state.server?t().advServer:t().advReceiver;}
+  const gm=state.gameMode||"golden";
+  if(isTBGame()){
+    const first=state.server==="A"?a:b;
+    const second=state.server==="A"?b:a;
+    return `${first} ${lang()==="FR"?"à":"to"} ${second}`;
+  }
+  if(gm==="normal"&&a>=3&&b>=3){if(a===b)return t().deuce;const adv=a>b?"A":"B";return adv===state.server?t().advServer:t().advReceiver;}
   const aT=tennisWord(a),bT=tennisWord(b);
   const first=state.server==="A"?aT:bT,second=state.server==="A"?bT:aT;
   const allW=lang()==="FR"?"partout":"all";
   return first===second?`${first} ${allW}`:`${first} ${second}`;
 }
 
-function isOnePointFromGame(team){const a=state.pointA,b=state.pointB;if(team==="A"){if(state.mode==="golden")return a===3;return(a===3&&b<3)||a===4;}if(state.mode==="golden")return b===3;return(b===3&&a<3)||b===4;}
-function isOneGameFromSet(team){const c=state.sets[state.currentSet];return team==="A"?(c.a===5&&c.a>c.b):(c.b===5&&c.b>c.a);}
+function isOnePointFromGame(team){
+  const a=state.pointA,b=state.pointB;
+  const gm=state.gameMode||"golden";
+  if(isTBGame()){
+    if(team==="A") return (a+1>=7)&&(a+1-b)>=2;
+    else           return (b+1>=7)&&(b+1-a)>=2;
+  }
+  if(team==="A"){if(gm==="golden")return a===3;return(a===3&&b<3)||a===4;}
+  if(gm==="golden")return b===3;return(b===3&&a<3)||b===4;
+}
+function isOneGameFromSet(team){
+  if(isTBGame()) return true;
+  const c=state.sets[state.currentSet];
+  if(state.tieBreak){
+    // With TB: only set point at 5-x (not at 6-5 since 6-6 leads to TB)
+    return team==="A"?(c.a===5&&c.a>c.b):(c.b===5&&c.b>c.a);
+  }else{
+    // Without TB: set point at 5-x AND at 6-5 (could win 7-5)
+    if(team==="A") return (c.a===5&&c.a>c.b)||(c.a>=6&&c.a-c.b===1);
+    return (c.b===5&&c.b>c.a)||(c.b>=6&&c.b-c.a===1);
+  }
+}
 
 function checkSpecialPoint(){
   const sA=setsWon("A"),sB=setsWon("B");
   const spA=isOneGameFromSet("A")&&isOnePointFromGame("A");
   const spB=isOneGameFromSet("B")&&isOnePointFromGame("B");
-  const mpA=sA===2&&spA,mpB=sB===2&&spB;
+  const needed=state.setsToWin||2;
+  const mpA=sA===(needed-1)&&spA,mpB=sB===(needed-1)&&spB;
   const gs=currentGameScoreStr();
   if(mpA){const l=t().matchPoint("A");showBanner(l);speakSequence([gs,l]);return true;}
   if(mpB){const l=t().matchPoint("B");showBanner(l);speakSequence([gs,l]);return true;}
@@ -521,17 +624,111 @@ function checkSpecialPoint(){
   return false;
 }
 
-function getDisplayScore(team){if(state.matchFinished)return"0";const a=state.pointA,b=state.pointB;if(state.mode==="golden"){const l=["0","15","30","40"];return team==="A"?l[Math.min(a,3)]:l[Math.min(b,3)];}if(a>=3&&b>=3){if(a===b)return"D";if(team==="A")return a>b?"A":"40";return b>a?"A":"40";}const l=["0","15","30","40","A"];return team==="A"?l[a]:l[b];}
+function getDisplayScore(team){
+  if(state.matchFinished)return"0";
+  const gm=state.gameMode||"golden";
+  if(isTBGame()){
+    return team==="A"?String(state.pointA):String(state.pointB);
+  }
+  const a=state.pointA,b=state.pointB;
+  if(gm==="golden"){const l=["0","15","30","40"];return team==="A"?l[Math.min(a,3)]:l[Math.min(b,3)];}
+  if(gm==="normal"&&a>=3&&b>=3){if(a===b)return"D";if(team==="A")return a>b?"A":"40";return b>a?"A":"40";}
+  const l=["0","15","30","40","A"];return team==="A"?l[a]:l[b];
+}
 function finalScoreStr(){const lim=Math.min(state.currentSet,4);return Array.from({length:lim+1},(_,i)=>scoreJoin(state.sets[i].a,state.sets[i].b)).join(", ");}
 function announceGame(team,snap,setDone,matchNow){const srv=state.server;const gs=srv==="A"?scoreJoin(snap.a,snap.b):scoreJoin(snap.b,snap.a);if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}if(setDone){speakSequence(t().winsSet(team,gs,srv));return;}speakSequence(t().winsGame(team,gs,srv));}
 
-function winGame(team){if(state.matchFinished)return;const cur=state.sets[state.currentSet];if(team==="A")cur.a++;else cur.b++;const snap={a:cur.a,b:cur.b};state.pointA=0;state.pointB=0;const setDone=isSetFinished(cur);let matchNow=false;if(setDone){const wA=setsWon("A"),wB=setsWon("B");if(wA>=3){state.matchFinished=true;state.winner="A";matchNow=true;}else if(wB>=3){state.matchFinished=true;state.winner="B";matchNow=true;}else if(state.currentSet<4)state.currentSet++;}if(!matchNow){state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";}announceGame(team,snap,setDone,matchNow);}
+function pointToDisplay(v, isWinner, gm){
+  if(isTBGame()) return String(v);
+  if(gm==="golden"){ const l=["0","15","30","40"]; return l[Math.min(v,3)]; }
+  if(v===4) return "AD";
+  const l=["0","15","30","40"]; return l[Math.min(v,3)];
+}
 
-function incrementA(){if(state.locked||state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);if(state.mode==="golden"){if(state.pointA<=2)state.pointA++;else winGame("A");}else{const a=state.pointA,b=state.pointB;if(a<3)state.pointA++;else if(a===3&&b<3)winGame("A");else if(a===3&&b===3)state.pointA=4;else if(a===4&&b===3)winGame("A");else if(a===3&&b===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
-function incrementB(){if(state.locked||state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);if(state.mode==="golden"){if(state.pointB<=2)state.pointB++;else winGame("B");}else{const a=state.pointA,b=state.pointB;if(b<3)state.pointB++;else if(b===3&&a<3)winGame("B");else if(b===3&&a===3)state.pointB=4;else if(b===4&&a===3)winGame("B");else if(b===3&&a===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
+function winGame(team){
+  if(state.matchFinished)return;
+  const setIdxAtWin = state.currentSet;
+  const gm=state.gameMode||"golden";
+  // Record game score with display values BEFORE resetting points
+  const da = pointToDisplay(state.pointA, team==="A", gm);
+  const db = pointToDisplay(state.pointB, team==="B", gm);
+  state.gameHistory.push({setIdx:setIdxAtWin, a:da, b:db, winner:team});
 
-function toggleMode(){saveHistory();state.mode=state.mode==="golden"?"normal":"golden";state.pointA=0;state.pointB=0;state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(state.mode==="golden"?t().golden:t().normal);}
-function toggleLock(){state.locked=!state.locked;vibrate(35);render();speak(state.locked?t().locked:t().unlocked);}
+  const cur=state.sets[state.currentSet];
+  if(team==="A")cur.a++;else cur.b++;
+  const snap={a:cur.a,b:cur.b};
+  state.pointA=0;state.pointB=0;
+  const setDone=isSetFinished(cur);let matchNow=false;
+  if(setDone){
+    const wA=setsWon("A"),wB=setsWon("B");
+    const needed=state.setsToWin||2;
+    if(wA>=needed){state.matchFinished=true;state.winner="A";matchNow=true;}
+    else if(wB>=needed){state.matchFinished=true;state.winner="B";matchNow=true;}
+    else if(state.currentSet<4)state.currentSet++;
+  }
+  if(!matchNow){
+    state.server=state.server==="A"?"B":"A";
+    state.servePos=state.server==="A"?"left":"right";
+    state.tieBreak=false; // reset TB flag for new set
+    // Announce tie-break game if now at 6-6
+    const cur2=state.sets[state.currentSet];
+    if(state.tieBreak && cur2.a===6 && cur2.b===6){
+      const tbMsg=lang()==="FR"?"Jeu décisif !":"Tie break!";
+      speakSequence([tbMsg]);
+      return;
+    }
+  }
+  announceGame(team,snap,setDone,matchNow);
+}
+
+function isTBGame(){
+  const cur=state.sets[state.currentSet];
+  return state.tieBreak && cur.a===6 && cur.b===6;
+}
+
+function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){const a=state.pointA+1,b=state.pointB;if(a>=7&&(a-b)>=2){winGame("A");}else{state.pointA++;}}else if(gm==="golden"){if(state.pointA<=2)state.pointA++;else winGame("A");}else{const a=state.pointA,b=state.pointB;if(a<3)state.pointA++;else if(a===3&&b<3)winGame("A");else if(a===3&&b===3)state.pointA=4;else if(a===4&&b===3)winGame("A");else if(a===3&&b===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
+function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){const a=state.pointA,b=state.pointB+1;if(b>=7&&(b-a)>=2){winGame("B");}else{state.pointB++;}}else if(gm==="golden"){if(state.pointB<=2)state.pointB++;else winGame("B");}else{const a=state.pointA,b=state.pointB;if(b<3)state.pointB++;else if(b===3&&a<3)winGame("B");else if(b===3&&a===3)state.pointB=4;else if(b===4&&a===3)winGame("B");else if(b===3&&a===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
+
+
+function cycleGameMode(){
+  state.gameMode = state.gameMode==="golden" ? "normal" : "golden";
+  state.pointA=0; state.pointB=0;
+  state.servePos=state.server==="A"?"left":"right";
+  vibrate(35); render();
+  speak(state.gameMode==="golden" ? t().golden : t().normal);
+}
+
+function toggleTieBreak(){
+  const cur=state.sets[state.currentSet];
+  if(!(cur.a===6 && cur.b===6 && state.pointA===0 && state.pointB===0)) return;
+  state.tieBreak = !state.tieBreak;
+  vibrate(35); render();
+  const msg = state.tieBreak
+    ? (lang()==="FR" ? "Jeu décisif activé" : "Tie break on")
+    : (lang()==="FR" ? "Jeu décisif désactivé" : "Tie break off");
+  speak(msg);
+}
+
+function canChangeSets(){
+  // Block if match is already finished
+  if(state.matchFinished) return false;
+  const wA=setsWon("A"), wB=setsWon("B");
+  // Block if current setting already has a winner
+  if(wA>=state.setsToWin||wB>=state.setsToWin) return false;
+  // Also block if switching to set3 wouldn't change outcome
+  // (i.e. the other value would also have a winner)
+  return true;
+}
+
+function toggleSets(){
+  if(!canChangeSets()) return;
+  state.setsToWin = state.setsToWin===2 ? 3 : 2;
+  vibrate(35); render();
+  const msg = state.setsToWin===2
+    ? (lang()==="FR" ? "Victoire en 2 sets" : "Winner in 2 sets")
+    : (lang()==="FR" ? "Victoire en 3 sets" : "Winner in 3 sets");
+  speak(msg);
+}
 
 function cycleAudioMode(){
   const idx = AUDIO_MODES.indexOf(state.audioMode);
@@ -543,8 +740,8 @@ function cycleAudioMode(){
 }
 
 function toggleServer(){if(state.matchStarted)return;state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(t().srvTeam(state.server));}
-function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="left";state.matchStarted=false;vibrate([40,40,40]);render();speak(t().reset);}
-function doUndo(){if(!history.length)return;const pAM=state.audioMode,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioMode=pAM;vibrate([30,30]);render();speak(t().undo);}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="left";state.matchStarted=false;state.gameHistory=[];vibrate([40,40,40]);render();speak(t().reset);}
+function doUndo(){if(!history.length)return;const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTB=state.tieBreak,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioMode=pAM;state.gameMode=pGM;state.setsToWin=pST;state.tieBreak=pTB;vibrate([30,30]);render();speak(t().undo);}
 
 // ── Server ball ───────────────────────────────────────────────────────────────
 function updateServerBall(){
@@ -590,9 +787,30 @@ function render(){
   });
 
   els.setLabel.textContent="SET "+(Math.min(state.currentSet+1,5));
-  els.modeBtn.textContent=state.mode==="golden"?"G":"N";
-  if(els.modeLabel)els.modeLabel.textContent=state.mode==="golden"?"G - Golden":"N - Normal";
-  els.lockBtn.textContent=state.locked?"🔒":"🔓";
+  const gmLabels={"golden":"G","normal":"N","tb":"TB","stb":"STB"};
+  const gm=state.gameMode||"golden";
+  els.modeBtn.textContent=gmLabels[gm];
+  els.modeBtn.classList.toggle("strikethrough", false);
+  els.modeBtn.classList.toggle("tb-active", gm==="tb");
+  els.modeBtn.classList.toggle("stb-active", gm==="stb");
+  if(els.modeLabel){const mlLabels={"golden":"G - Golden","normal":"G - Normal","tb":"Tie Break","stb":"Super TB"};els.modeLabel.textContent=mlLabels[gm];}
+  if(els.setsBtn){
+    const setLabel=state.setsToWin===2?"Set 2":"Set 3";
+    els.setsBtn.textContent=setLabel;
+    els.setsBtn.classList.toggle("bo5",state.setsToWin===3);
+    const setsChangeable=canChangeSets();
+    els.setsBtn.style.opacity=setsChangeable?"1":"0.35";
+    els.setsBtn.style.pointerEvents=setsChangeable?"auto":"none";
+  }
+  if(els.tbreakBtn){
+    const cur=state.sets[state.currentSet];
+    // Active ONLY when set score is exactly 6-6 AND no points played yet
+    const atSixSix = cur.a===6 && cur.b===6 && state.pointA===0 && state.pointB===0;
+    els.tbreakBtn.textContent = state.tieBreak ? "TB ✓" : "TB";
+    els.tbreakBtn.classList.toggle("tb-on", state.tieBreak && atSixSix);
+    els.tbreakBtn.style.opacity = atSixSix ? "1" : "0.25";
+    els.tbreakBtn.style.pointerEvents = atSixSix ? "auto" : "none";
+  }
   els.audioBtn.textContent=audioBtnLabel();
   els.audioBtn.style.opacity=state.audioMode==="MUTE"?"0.45":"1";
   if(els.serverBtn){
@@ -600,10 +818,17 @@ function render(){
     els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
   }
 
-  const dis=state.locked||state.matchFinished;
+  const dis=state.matchFinished;
   els.scoreA.classList.toggle("disabled",dis);
   els.scoreB.classList.toggle("disabled",dis);
-  els.lockBtn.classList.toggle("locked",state.locked);
+  // Grey all interactive buttons when locked
+
+
+
+  // Build history overlay
+  if(els.overlayHistory){
+    els.overlayHistory.innerHTML="";
+  }
 
   if(state.matchFinished&&state.winner){
     els.overlayWinner.textContent="🏆 Team "+state.winner+" wins!";
@@ -617,10 +842,12 @@ function render(){
 
 // ── Events ────────────────────────────────────────────────────────────────────
 bindTap(els.scoreA,incrementA);bindTap(els.scoreB,incrementB);
-bindTap(els.modeBtn,toggleMode);bindTap(els.lockBtn,toggleLock);
+bindTap(els.modeBtn,cycleGameMode);
+bindTap(els.tbreakBtn,toggleTieBreak);bindTap(els.setsBtn,toggleSets);
 bindTap(els.audioBtn,cycleAudioMode);
 bindTap(els.serverBtn,toggleServer);bindTap(els.undoBtn,doUndo);
 bindTap(els.resetOverlayBtn,doReset);
+bindTap(els.undoOverlayBtn,()=>{ doUndo(); });
 
 els.resetBtn.addEventListener("touchstart",e=>{e.preventDefault();els.resetBtn.classList.add("holding");resetTimer=setTimeout(doReset,800);},{passive:false});
 els.resetBtn.addEventListener("touchend",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
