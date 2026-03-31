@@ -741,7 +741,19 @@ function cycleAudioMode(){
 
 function toggleServer(){if(state.matchStarted)return;state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(t().srvTeam(state.server));}
 function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="left";state.matchStarted=false;state.gameHistory=[];vibrate([40,40,40]);render();speak(t().reset);}
-function doUndo(){if(!history.length)return;const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTB=state.tieBreak,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioMode=pAM;state.gameMode=pGM;state.setsToWin=pST;state.tieBreak=pTB;vibrate([30,30]);render();speak(t().undo);}
+function doUndo(){
+  if(!history.length)return;
+  const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin;
+  // Do NOT preserve tieBreak from current state — restore it from history
+  const prev=history.pop();
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state,prev);
+  state.audioMode=pAM;
+  state.gameMode=pGM;
+  state.setsToWin=pST;
+  // tieBreak is restored from history snapshot (correct value for that moment)
+  vibrate([30,30]);render();speak(t().undo);
+}
 
 // ── Server ball ───────────────────────────────────────────────────────────────
 function updateServerBall(){
@@ -755,10 +767,12 @@ function updateServerBall(){
   const sz=22,off=4;
   let left,top;
   if(state.server==="A"){
+    // Ball on top edge of score A
     top=(aR.top-ar.top)-sz/2+off;
     left=state.servePos==="left"?(aR.left-ar.left)-sz/2+off:(aR.right-ar.left)-sz/2-off;
   }else{
-    top=(bR.bottom-ar.top)-sz/2-off;
+    // Ball on TOP edge of score B (not bottom)
+    top=(bR.top-ar.top)-sz/2+off;
     left=state.servePos==="right"?(bR.right-ar.left)-sz/2-off:(bR.left-ar.left)-sz/2+off;
   }
   b.style.left=left+"px";
