@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V33</title>
+<title>PadelTap V34</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -100,22 +100,14 @@
 
   .audio{
     top:4%;
-    left:64%;
-    width:42px;
+    left:62%;
+    width:52px;
     height:30px;
     border-radius:16px;
-    font-size:14px;
+    font-size:12px;
   }
 
-  .lang{
-    top:4%;
-    left:79%;
-    width:38px;
-    height:30px;
-    border-radius:16px;
-    font-size:11px;
-    font-weight:bold;
-  }
+
 
   .server{
     top:67%;
@@ -368,8 +360,7 @@
   <div class="modeLabel" id="modeLabel">G - Golden</div>
 
   <div class="circle-btn lock" id="lockBtn">L</div>
-  <div class="pill audio" id="audioBtn">A</div>
-  <div class="pill lang" id="langBtn">EN</div>
+  <div class="pill audio" id="audioBtn">EN</div>
 
   <div class="pill server" id="serverBtn">Srv A</div>
 
@@ -418,6 +409,8 @@
   </div>
 </div>
 
+
+</html>
 <script>
 (function(){
 
@@ -426,15 +419,31 @@ const T={
   FR:{love:"zéro",f15:"quinze",f30:"trente",f40:"quarante",deuce:"Égalité",advServer:"Avantage serveur",advReceiver:"Avantage receveur",winsGame:(t,s,srv)=>[`Jeu équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsSet:(t,s,srv)=>[`Jeu et set équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsMatch:(t,s)=>[`Jeu set et match équipe ${t} !`,`Score final ${s}`],setPoint:(t)=>`Balle de set équipe ${t}`,matchPoint:(t)=>`Balle de match équipe ${t}`,undo:"Annuler",reset:"Match réinitialisé",locked:"Verrouillé",unlocked:"Déverrouillé",golden:"Point d'or",normal:"Mode normal",audioOn:"Audio activé",srvTeam:(t)=>`Équipe ${t} au service`}
 };
 
-const state={pointA:0,pointB:0,sets:Array(5).fill(null).map(()=>({a:0,b:0})),currentSet:0,locked:false,mode:"golden",matchFinished:false,audioEnabled:true,server:"A",winner:null,servePos:"left",matchStarted:false,lang:"EN"};
+// Audio mode cycles: EN → FR → MUTE → EN
+const AUDIO_MODES = ["EN","FR","MUTE"];
+
+const state={
+  pointA:0,pointB:0,
+  sets:Array(5).fill(null).map(()=>({a:0,b:0})),
+  currentSet:0,locked:false,mode:"golden",
+  matchFinished:false,
+  server:"A",winner:null,
+  servePos:"left",matchStarted:false,
+  audioMode:"EN"  // EN | FR | MUTE
+};
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
+
+// Helpers
+function lang(){ return state.audioMode==="MUTE" ? "EN" : state.audioMode; }
+function isMuted(){ return state.audioMode==="MUTE"; }
+function t(){ return T[lang()]; }
 
 const ids=id=>document.getElementById(id);
 const els={
   scoreA:ids("scoreA"),scoreB:ids("scoreB"),
   modeBtn:ids("modeBtn"),modeLabel:ids("modeLabel"),
-  lockBtn:ids("lockBtn"),audioBtn:ids("audioBtn"),langBtn:ids("langBtn"),
+  lockBtn:ids("lockBtn"),audioBtn:ids("audioBtn"),
   serverBtn:ids("serverBtn"),resetBtn:ids("resetBtn"),undoBtn:ids("undoBtn"),
   setLabel:ids("setLabel"),
   setH1:ids("setH1"),setH2:ids("setH2"),setH3:ids("setH3"),
@@ -445,29 +454,24 @@ const els={
   banner:ids("banner")
 };
 
-// ── Visible set window (sliding) ──────────────────────────────────────────────
-function visibleStart(cs){return cs<=2?0:cs===3?1:2;}
-function visibleIndices(cs){const s=visibleStart(cs);return[s,s+1,s+2];}
-
 // ── Speech ────────────────────────────────────────────────────────────────────
-function pickVoice(lang){const v=speechSynthesis.getVoices()||[];if(lang==="FR")return v.find(x=>/fr[-_]?FR/i.test(x.lang))||v.find(x=>/^fr/i.test(x.lang))||null;return v.find(x=>/en[-_]?US/i.test(x.lang)&&/google|samsung/i.test(x.name))||v.find(x=>/^en/i.test(x.lang))||null;}
+function pickVoice(l){const v=speechSynthesis.getVoices()||[];if(l==="FR")return v.find(x=>/fr[-_]?FR/i.test(x.lang))||v.find(x=>/^fr/i.test(x.lang))||null;return v.find(x=>/en[-_]?US/i.test(x.lang)&&/google|samsung/i.test(x.name))||v.find(x=>/^en/i.test(x.lang))||null;}
 
 function speakNext(){
-  if(!speechQueue.length||!state.audioEnabled){speechQueue=[];return;}
+  if(!speechQueue.length||isMuted()){speechQueue=[];return;}
   const text=speechQueue.shift();
   try{
     const u=new SpeechSynthesisUtterance(text);
-    u.lang=state.lang==="FR"?"fr-FR":"en-US";
+    u.lang=lang()==="FR"?"fr-FR":"en-US";
     u.rate=0.82;u.pitch=0.92;u.volume=1.0;
-    const v=pickVoice(state.lang);if(v)u.voice=v;
+    const v=pickVoice(lang());if(v)u.voice=v;
     u.onend=()=>setTimeout(speakNext,350);
     u.onerror=()=>setTimeout(speakNext,350);
     speechSynthesis.speak(u);
   }catch(_){setTimeout(speakNext,100);}
 }
-
 function speakSequence(phrases){
-  if(!state.audioEnabled)return;
+  if(isMuted())return;
   speechSynthesis.cancel();
   speechQueue=[...phrases];
   setTimeout(speakNext,200);
@@ -487,23 +491,20 @@ function vibrate(p){try{if(navigator.vibrate)navigator.vibrate(p||30);}catch(_){
 function cloneState(){return JSON.parse(JSON.stringify(state));}
 function saveHistory(){history.push(cloneState());if(history.length>100)history.shift();}
 function bindTap(el,fn){if(!el)return;let touched=false;el.addEventListener("touchstart",e=>{touched=true;e.preventDefault();fn();},{passive:false});el.addEventListener("click",e=>{if(touched){touched=false;return;}e.preventDefault();fn();});}
-function t(){return T[state.lang];}
-function scoreJoin(a,b){return state.lang==="FR"?`${a} à ${b}`:`${a} to ${b}`;}
+function scoreJoin(a,b){return lang()==="FR"?`${a} à ${b}`:`${a} to ${b}`;}
 function tennisWord(v){if(v===0)return t().love;if(v===1)return t().f15;if(v===2)return t().f30;return t().f40;}
 function isSetFinished(s){return(s.a>=6||s.b>=6)&&Math.abs(s.a-s.b)>=2;}
 function setsWon(team){return state.sets.filter(s=>{if(!isSetFinished(s))return false;return team==="A"?s.a>s.b:s.b>s.a;}).length;}
 
-// ── Game score for announce ───────────────────────────────────────────────────
 function currentGameScoreStr(){
   const a=state.pointA,b=state.pointB;
   if(state.mode==="normal"&&a>=3&&b>=3){if(a===b)return t().deuce;const adv=a>b?"A":"B";return adv===state.server?t().advServer:t().advReceiver;}
   const aT=tennisWord(a),bT=tennisWord(b);
   const first=state.server==="A"?aT:bT,second=state.server==="A"?bT:aT;
-  const allW=state.lang==="FR"?"partout":"all";
+  const allW=lang()==="FR"?"partout":"all";
   return first===second?`${first} ${allW}`:`${first} ${second}`;
 }
 
-// ── Set/Match point ───────────────────────────────────────────────────────────
 function isOnePointFromGame(team){const a=state.pointA,b=state.pointB;if(team==="A"){if(state.mode==="golden")return a===3;return(a===3&&b<3)||a===4;}if(state.mode==="golden")return b===3;return(b===3&&a<3)||b===4;}
 function isOneGameFromSet(team){const c=state.sets[state.currentSet];return team==="A"?(c.a===5&&c.a>c.b):(c.b===5&&c.b>c.a);}
 
@@ -520,14 +521,10 @@ function checkSpecialPoint(){
   return false;
 }
 
-// ── Score display ─────────────────────────────────────────────────────────────
 function getDisplayScore(team){if(state.matchFinished)return"0";const a=state.pointA,b=state.pointB;if(state.mode==="golden"){const l=["0","15","30","40"];return team==="A"?l[Math.min(a,3)]:l[Math.min(b,3)];}if(a>=3&&b>=3){if(a===b)return"D";if(team==="A")return a>b?"A":"40";return b>a?"A":"40";}const l=["0","15","30","40","A"];return team==="A"?l[a]:l[b];}
-
-// ── Game announce ─────────────────────────────────────────────────────────────
 function finalScoreStr(){const lim=Math.min(state.currentSet,4);return Array.from({length:lim+1},(_,i)=>scoreJoin(state.sets[i].a,state.sets[i].b)).join(", ");}
 function announceGame(team,snap,setDone,matchNow){const srv=state.server;const gs=srv==="A"?scoreJoin(snap.a,snap.b):scoreJoin(snap.b,snap.a);if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}if(setDone){speakSequence(t().winsSet(team,gs,srv));return;}speakSequence(t().winsGame(team,gs,srv));}
 
-// ── Core logic ────────────────────────────────────────────────────────────────
 function winGame(team){if(state.matchFinished)return;const cur=state.sets[state.currentSet];if(team==="A")cur.a++;else cur.b++;const snap={a:cur.a,b:cur.b};state.pointA=0;state.pointB=0;const setDone=isSetFinished(cur);let matchNow=false;if(setDone){const wA=setsWon("A"),wB=setsWon("B");if(wA>=3){state.matchFinished=true;state.winner="A";matchNow=true;}else if(wB>=3){state.matchFinished=true;state.winner="B";matchNow=true;}else if(state.currentSet<4)state.currentSet++;}if(!matchNow){state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";}announceGame(team,snap,setDone,matchNow);}
 
 function incrementA(){if(state.locked||state.matchFinished)return;saveHistory();state.matchStarted=true;const before=JSON.stringify(state.sets);if(state.mode==="golden"){if(state.pointA<=2)state.pointA++;else winGame("A");}else{const a=state.pointA,b=state.pointB;if(a<3)state.pointA++;else if(a===3&&b<3)winGame("A");else if(a===3&&b===3)state.pointA=4;else if(a===4&&b===3)winGame("A");else if(a===3&&b===4){state.pointA=3;state.pointB=3;}}vibrate(25);if(JSON.stringify(state.sets)===before&&!state.matchFinished){state.servePos=state.servePos==="left"?"right":"left";if(!checkSpecialPoint())speak(currentGameScoreStr());}render();}
@@ -535,16 +532,24 @@ function incrementB(){if(state.locked||state.matchFinished)return;saveHistory();
 
 function toggleMode(){saveHistory();state.mode=state.mode==="golden"?"normal":"golden";state.pointA=0;state.pointB=0;state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(state.mode==="golden"?t().golden:t().normal);}
 function toggleLock(){state.locked=!state.locked;vibrate(35);render();speak(state.locked?t().locked:t().unlocked);}
-function toggleAudio(){state.audioEnabled=!state.audioEnabled;vibrate(35);render();if(state.audioEnabled)speak(t().audioOn);}
-function toggleLang(){state.lang=state.lang==="EN"?"FR":"EN";vibrate(35);render();}
+
+function cycleAudioMode(){
+  const idx = AUDIO_MODES.indexOf(state.audioMode);
+  state.audioMode = AUDIO_MODES[(idx+1) % AUDIO_MODES.length];
+  vibrate(35);
+  render();
+  // Announce new mode if not muted
+  if(!isMuted()) speak(t().audioOn);
+}
+
 function toggleServer(){if(state.matchStarted)return;state.server=state.server==="A"?"B":"A";state.servePos=state.server==="A"?"left":"right";vibrate(35);render();speak(t().srvTeam(state.server));}
 function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="left";state.matchStarted=false;vibrate([40,40,40]);render();speak(t().reset);}
-function doUndo(){if(!history.length)return;const pA=state.audioEnabled,pL=state.lang,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioEnabled=pA;state.lang=pL;vibrate([30,30]);render();speak(t().undo);}
+function doUndo(){if(!history.length)return;const pAM=state.audioMode,prev=history.pop();Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,prev);state.audioMode=pAM;vibrate([30,30]);render();speak(t().undo);}
 
 // ── Server ball ───────────────────────────────────────────────────────────────
 function updateServerBall(){
   const b=document.getElementById("serverBall");
-  if(!b){return;}
+  if(!b)return;
   if(state.matchFinished){b.style.display="none";return;}
   b.style.display="block";
   const aR=els.scoreA.getBoundingClientRect();
@@ -564,40 +569,36 @@ function updateServerBall(){
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
+function audioBtnLabel(){
+  if(state.audioMode==="EN") return "🔊EN";
+  if(state.audioMode==="FR") return "🔊FR";
+  return "🔇";
+}
+
 function render(){
   els.scoreA.textContent=getDisplayScore("A");
   els.scoreB.textContent=getDisplayScore("B");
 
-  // Sliding window for sets
-  const vi=visibleIndices(state.currentSet);
-  if(els.setH1)els.setH1.textContent=(vi[0]+1);
-  if(els.setH2)els.setH2.textContent=(vi[1]+1);
-  if(els.setH3)els.setH3.textContent=(vi[2]+1);
-
-  const cellsA=[els.setA1,els.setA2,els.setA3];
-  const cellsB=[els.setB1,els.setB2,els.setB3];
-  vi.forEach((si,col)=>{
-    const active=si===state.currentSet;
-    if(cellsA[col]){
-      cellsA[col].textContent=state.sets[si].a;
-      cellsA[col].style.fontSize=active?"22px":"16px";
-      cellsA[col].style.opacity=active?"1":"0.4";
-    }
-    if(cellsB[col]){
-      cellsB[col].textContent=state.sets[si].b;
-      cellsB[col].style.fontSize=active?"22px":"16px";
-      cellsB[col].style.opacity=active?"1":"0.4";
-    }
+  const vi=[0,1,2].map(i=>{const s=state.currentSet<=2?0:state.currentSet===3?1:2;return s+i;});
+  [els.setH1,els.setH2,els.setH3].forEach((el,i)=>{if(el)el.textContent=(vi[i]+1);});
+  [[els.setA1,els.setA2,els.setA3],[els.setB1,els.setB2,els.setB3]].forEach((cells,row)=>{
+    cells.forEach((el,i)=>{
+      if(!el)return;
+      el.textContent=row===0?state.sets[vi[i]].a:state.sets[vi[i]].b;
+      el.className="setsCell"+(vi[i]===state.currentSet?" active-score":" inactive-score");
+    });
   });
 
   els.setLabel.textContent="SET "+(Math.min(state.currentSet+1,5));
   els.modeBtn.textContent=state.mode==="golden"?"G":"N";
   if(els.modeLabel)els.modeLabel.textContent=state.mode==="golden"?"G - Golden":"N - Normal";
   els.lockBtn.textContent=state.locked?"🔒":"🔓";
-  els.audioBtn.textContent=state.audioEnabled?"🔊":"🔇";
-  if(els.langBtn)els.langBtn.textContent=state.lang;
-  if(els.serverBtn)els.serverBtn.textContent="Srv "+state.server;
-  if(els.serverBtn)els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
+  els.audioBtn.textContent=audioBtnLabel();
+  els.audioBtn.style.opacity=state.audioMode==="MUTE"?"0.45":"1";
+  if(els.serverBtn){
+    els.serverBtn.textContent="Srv "+state.server;
+    els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
+  }
 
   const dis=state.locked||state.matchFinished;
   els.scoreA.classList.toggle("disabled",dis);
@@ -617,7 +618,7 @@ function render(){
 // ── Events ────────────────────────────────────────────────────────────────────
 bindTap(els.scoreA,incrementA);bindTap(els.scoreB,incrementB);
 bindTap(els.modeBtn,toggleMode);bindTap(els.lockBtn,toggleLock);
-bindTap(els.audioBtn,toggleAudio);bindTap(els.langBtn,toggleLang);
+bindTap(els.audioBtn,cycleAudioMode);
 bindTap(els.serverBtn,toggleServer);bindTap(els.undoBtn,doUndo);
 bindTap(els.resetOverlayBtn,doReset);
 
@@ -628,7 +629,6 @@ els.resetBtn.addEventListener("mousedown",()=>{els.resetBtn.classList.add("holdi
 els.resetBtn.addEventListener("mouseup",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
 els.resetBtn.addEventListener("mouseleave",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
 
-window.addEventListener("resize",()=>requestAnimationFrame(updateServerBall));
 if(window.speechSynthesis&&window.speechSynthesis.onvoiceschanged!==undefined)window.speechSynthesis.onvoiceschanged=()=>{};
 render();
 })();
