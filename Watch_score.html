@@ -540,7 +540,6 @@
 </div>
 
 
-</html>
 <script>
 (function(){
 
@@ -578,8 +577,9 @@ function playerName(team, idx){ // idx=1 or 2
 }
 // Team display name (both players)
 function nameOf(team){ 
-  if(team==="A") return (state.nameA1||"A1")+"/"+(state.nameA2||"A2");
-  return (state.nameB1||"B1")+"/"+(state.nameB2||"B2");
+  const sep = lang()==="FR" ? " et " : " and ";
+  if(team==="A") return (state.nameA1||"A1")+sep+(state.nameA2||"A2");
+  return (state.nameB1||"B1")+sep+(state.nameB2||"B2");
 }
 // Short for display in table
 function shortName(team){
