@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>PadelTap V49</title>
+<title>PadelTap V51</title>
 <style>
   :root{
     --bg:#123cbe;
@@ -131,6 +131,15 @@
     border-radius:16px;
     font-size:10px;
     font-weight:bold;
+  }
+
+  .players-btn{
+    top:4%;
+    left:82%;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    font-size:14px;
   }
 
   .sets-btn.bo5{
@@ -423,6 +432,34 @@
     transition:transform 0.3s ease;
   }
   #banner.show{ transform:translateY(0); }
+
+  /* ── Name modal ── */
+  #nameModal{
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.75); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  #nameModal.show{ display:flex; }
+  #nameModalBox{
+    background:#1a3a8f; border:2px solid rgba(255,255,255,0.3);
+    border-radius:16px; padding:18px 20px; min-width:220px;
+    display:flex; flex-direction:column; gap:12px; align-items:center;
+  }
+  #nameModalTitle{ color:var(--yellow); font-size:15px; font-weight:bold; }
+  #nameModal input{
+    width:100%; padding:7px 12px; border-radius:8px; border:none;
+    background:rgba(255,255,255,0.15); color:white;
+    font-size:15px; font-weight:bold;
+    outline:none; caret-color:var(--yellow); margin-bottom:4px;
+  }
+  #nameModal input::placeholder{ color:rgba(255,255,255,0.35); }
+  #nameModalBtns{ display:flex; gap:10px; }
+  .modal-btn{
+    padding:7px 20px; border-radius:10px; font-size:14px; font-weight:bold;
+    cursor:pointer; border:none;
+  }
+  .modal-ok{ background:var(--blue); color:var(--textDark); }
+  .modal-cancel{ background:rgba(255,255,255,0.15); color:white; }
 </style>
 </head>
 <body>
@@ -435,6 +472,7 @@
   <div class="pill sets-btn" id="setsBtn">S2</div>
 
   <div class="pill server" id="serverBtn">Srv A</div>
+  <div class="pill players-btn" id="playersBtn">👥</div>
 
   <div class="setLabel" id="setLabel">SET 1</div>
 
@@ -483,6 +521,22 @@
       <div class="resetOverlayBtn" id="resetOverlayBtn">Reset</div>
     </div>
   </div>
+  <!-- Name modal -->
+  <div id="nameModal">
+    <div id="nameModalBox">
+      <div id="nameModalTitle">👥 Players</div>
+      <div style="width:100%;font-size:11px;color:var(--yellow);font-weight:bold;margin-bottom:2px">Team A (grey)</div>
+      <input id="nameInputA1" type="text" maxlength="10" placeholder="Player A1..." autocomplete="off" spellcheck="false"/>
+      <input id="nameInputA2" type="text" maxlength="10" placeholder="Player A2..." autocomplete="off" spellcheck="false"/>
+      <div style="width:100%;font-size:11px;color:var(--yellow);font-weight:bold;margin:6px 0 2px 0">Team B (yellow)</div>
+      <input id="nameInputB1" type="text" maxlength="10" placeholder="Player B1..." autocomplete="off" spellcheck="false"/>
+      <input id="nameInputB2" type="text" maxlength="10" placeholder="Player B2..." autocomplete="off" spellcheck="false"/>
+      <div id="nameModalBtns" style="margin-top:6px">
+        <div class="modal-btn modal-cancel" id="nameCancelBtn">Cancel</div>
+        <div class="modal-btn modal-ok" id="nameOkBtn">OK</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -491,8 +545,8 @@
 (function(){
 
 const T={
-  EN:{love:"love",f15:"15",f30:"30",f40:"40",deuce:"Deuce",advServer:"Advantage server",advReceiver:"Advantage receiver",winsGame:(t,s,srv)=>[`Team ${t} wins the game.`,`${s}.`,`Team ${srv} to serve`],winsSet:(t,s,srv)=>[`Set Team ${t}.`,`${s}.`,`Team ${srv} to serve`],winsMatch:(t,s)=>[`Game set and match Team ${t}!`,`Final score ${s}`],setPoint:(t)=>`Set point Team ${t}`,matchPoint:(t)=>`Match point Team ${t}`,undo:"Undo",reset:"Match reset",locked:"Locked",unlocked:"Unlocked",golden:"Golden point",normal:"Normal mode",audioOn:"Audio on",srvTeam:(t)=>`Team ${t} to serve`},
-  FR:{love:"zéro",f15:"quinze",f30:"trente",f40:"quarante",deuce:"Égalité",advServer:"Avantage serveur",advReceiver:"Avantage receveur",winsGame:(t,s,srv)=>[`Jeu équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsSet:(t,s,srv)=>[`Jeu et set équipe ${t}.`,`${s}.`,`Équipe ${srv} au service`],winsMatch:(t,s)=>[`Jeu set et match équipe ${t} !`,`Score final ${s}`],setPoint:(t)=>`Balle de set équipe ${t}`,matchPoint:(t)=>`Balle de match équipe ${t}`,undo:"Annuler",reset:"Match réinitialisé",locked:"Verrouillé",unlocked:"Déverrouillé",golden:"Point d'or",normal:"Mode normal",audioOn:"Audio activé",srvTeam:(t)=>`Équipe ${t} au service`}
+  EN:{love:"love",f15:"15",f30:"30",f40:"40",deuce:"Deuce",advServer:"Advantage server",advReceiver:"Advantage receiver",winsGame:(t,s,srv)=>[`${nameOf(t)} wins the game.`,`${s}.`,`${currentServerName()} to serve`],winsSet:(t,s,srv)=>[`Set ${nameOf(t)}.`,`${s}.`,`${currentServerName()} to serve`],winsMatch:(t,s)=>[`Game set and match ${nameOf(t)}!`,`Final score ${s}`],setPoint:(t)=>`Set point ${nameOf(t)}`,matchPoint:(t)=>`Match point ${nameOf(t)}`,undo:"Undo",reset:"Match reset",locked:"Locked",unlocked:"Unlocked",golden:"Golden point",normal:"Normal mode",audioOn:"Audio on",srvTeam:(t)=>`${currentServerName()} to serve`},
+  FR:{love:"zéro",f15:"quinze",f30:"trente",f40:"quarante",deuce:"Égalité",advServer:"Avantage serveur",advReceiver:"Avantage receveur",winsGame:(t,s,srv)=>[`Jeu ${nameOf(t)}.`,`${s}.`,`${currentServerName()} au service`],winsSet:(t,s,srv)=>[`Jeu et set ${nameOf(t)}.`,`${s}.`,`${currentServerName()} au service`],winsMatch:(t,s)=>[`Jeu set et match ${nameOf(t)} !`,`Score final ${s}`],setPoint:(t)=>`Balle de set ${nameOf(t)}`,matchPoint:(t)=>`Balle de match ${nameOf(t)}`,undo:"Annuler",reset:"Match réinitialisé",locked:"Verrouillé",unlocked:"Déverrouillé",golden:"Point d'or",normal:"Mode normal",audioOn:"Audio activé",srvTeam:(t)=>`${currentServerName()} au service`}
 };
 
 // Audio mode cycles: EN → FR → MUTE → EN
@@ -508,10 +562,73 @@ const state={
   audioMode:"EN",  // EN | FR | MUTE
   gameHistory:[],
   totalPointsA:0,
-  totalPointsB:0
+  totalPointsB:0,
+  nameA1:"A1",nameA2:"A2",
+  nameB1:"B1",nameB2:"B2",
+  serverPlayerIdx:0  // 0=A1,1=B1,2=A2,3=B2 cycling
 };
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
+
+// ── Player names ─────────────────────────────────────────────────────────────
+// Player names per team
+function playerName(team, idx){ // idx=1 or 2
+  if(team==="A") return idx===1?(state.nameA1||"A1"):(state.nameA2||"A2");
+  return idx===1?(state.nameB1||"B1"):(state.nameB2||"B2");
+}
+// Team display name (both players)
+function nameOf(team){ 
+  if(team==="A") return (state.nameA1||"A1")+"/"+(state.nameA2||"A2");
+  return (state.nameB1||"B1")+"/"+(state.nameB2||"B2");
+}
+// Short for display in table
+function shortName(team){
+  if(team==="A") return (state.nameA1||"A").substring(0,4)+"/"+(state.nameA2||"A").substring(0,4);
+  return (state.nameB1||"B").substring(0,4)+"/"+(state.nameB2||"B").substring(0,4);
+}
+
+// Server rotation: A1→B1→A2→B2→A1→...
+// serverPlayerIdx: 0=A1,1=B1,2=A2,3=B2
+const SERVER_ROTATION = [
+  {team:"A", idx:1},
+  {team:"B", idx:1},
+  {team:"A", idx:2},
+  {team:"B", idx:2}
+];
+
+function currentServerName(){
+  const r = SERVER_ROTATION[state.serverPlayerIdx % 4];
+  return playerName(r.team, r.idx);
+}
+
+function currentServerTeam(){
+  return SERVER_ROTATION[state.serverPlayerIdx % 4].team;
+}
+
+let pendingNameTeam=null;
+
+function openNameModal(){
+  const modal=document.getElementById("nameModal");
+  document.getElementById("nameInputA1").value=state.nameA1==="A1"?"":state.nameA1;
+  document.getElementById("nameInputA2").value=state.nameA2==="A2"?"":state.nameA2;
+  document.getElementById("nameInputB1").value=state.nameB1==="B1"?"":state.nameB1;
+  document.getElementById("nameInputB2").value=state.nameB2==="B2"?"":state.nameB2;
+  modal.classList.add("show");
+  setTimeout(()=>document.getElementById("nameInputA1").focus(),100);
+}
+
+function closeNameModal(save){
+  const modal=document.getElementById("nameModal");
+  if(save){
+    const v=n=>n.trim().substring(0,10);
+    state.nameA1=v(document.getElementById("nameInputA1").value)||"A1";
+    state.nameA2=v(document.getElementById("nameInputA2").value)||"A2";
+    state.nameB1=v(document.getElementById("nameInputB1").value)||"B1";
+    state.nameB2=v(document.getElementById("nameInputB2").value)||"B2";
+    render();
+  }
+  modal.classList.remove("show");
+}
 
 // Helpers
 function lang(){ return state.audioMode==="MUTE" ? "EN" : state.audioMode; }
@@ -683,14 +800,22 @@ function winGame(team){
   }
   if(!matchNow){
     if(state.tieBreak && state.tbInitialServer){
-      // New set: the team that did NOT start TB serves first
-      state.server = state.tbInitialServer === "A" ? "B" : "A";
+      // New set: team that did NOT start TB serves first — find their next player
+      const nextTeam = state.tbInitialServer === "A" ? "B" : "A";
+      // Advance idx until we reach the next player of nextTeam
+      let tries=0;
+      do {
+        state.serverPlayerIdx = (state.serverPlayerIdx + 1) % 4;
+        tries++;
+      } while(SERVER_ROTATION[state.serverPlayerIdx].team !== nextTeam && tries < 4);
     } else {
-      state.server = state.server === "A" ? "B" : "A";
+      // Normal: advance to next player in rotation
+      state.serverPlayerIdx = (state.serverPlayerIdx + 1) % 4;
     }
+    state.server = SERVER_ROTATION[state.serverPlayerIdx].team;
     state.servePos = "right";
-    state.tieBreak = false; // reset TB flag for new set
-    state.tbInitialServer = "A"; // reset
+    state.tieBreak = false;
+    state.tbInitialServer = state.server;
     // Announce tie-break game if now at 6-6
     const cur2=state.sets[state.currentSet];
     if(state.tieBreak && cur2.a===6 && cur2.b===6){
@@ -812,11 +937,18 @@ function cycleAudioMode(){
   if(!isMuted()) speak(t().audioOn);
 }
 
-function toggleServer(){if(state.matchStarted)return;state.server=state.server==="A"?"B":"A";state.servePos="right";vibrate(35);render();speak(t().srvTeam(state.server));}
-function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.servePos="right";state.matchStarted=false;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;vibrate([40,40,40]);render();speak(t().reset);}
+function toggleServer(){
+  if(state.matchStarted)return;
+  state.serverPlayerIdx=(state.serverPlayerIdx+1)%4;
+  state.server=SERVER_ROTATION[state.serverPlayerIdx%4].team;
+  state.servePos="right";
+  vibrate(35);render();
+  speak(currentServerName()+(lang()==="FR"?" au service":" to serve"));
+}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;vibrate([40,40,40]);render();speak(t().reset);}
 function doUndo(){
   if(!history.length)return;
-  const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer;
+  const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer,pNA1=state.nameA1,pNA2=state.nameA2,pNB1=state.nameB1,pNB2=state.nameB2;
   // Do NOT preserve tieBreak from current state — restore it from history
   const prev=history.pop();
   Object.keys(state).forEach(k=>delete state[k]);
@@ -825,6 +957,7 @@ function doUndo(){
   state.gameMode=pGM;
   state.setsToWin=pST;
   state.tbInitialServer=pTBInit;
+  state.nameA1=pNA1;state.nameA2=pNA2;state.nameB1=pNB1;state.nameB2=pNB2;
   // tieBreak is restored from history snapshot (correct value for that moment)
   vibrate([30,30]);render();speak(t().undo);
 }
@@ -875,6 +1008,11 @@ function render(){
   });
 
   els.setLabel.textContent="SET "+(Math.min(state.currentSet+1,5));
+  // Update A/B labels with player initials
+  const labelA=document.querySelector(".setsLabelCell.labelA");
+  const labelB=document.querySelector(".setsLabelCell.labelB");
+  if(labelA) labelA.textContent=state.nameA1==="A1"?"A":(state.nameA1[0]+(state.nameA2[0]||""));
+  if(labelB) labelB.textContent=state.nameB1==="B1"?"B":(state.nameB1[0]+(state.nameB2[0]||""));
   const gmLabels={"golden":"G","normal":"N","tb":"TB","stb":"STB"};
   const gm=state.gameMode||"golden";
   els.modeBtn.textContent=gmLabels[gm];
@@ -902,7 +1040,7 @@ function render(){
   els.audioBtn.textContent=audioBtnLabel();
   els.audioBtn.style.opacity=state.audioMode==="MUTE"?"0.45":"1";
   if(els.serverBtn){
-    els.serverBtn.textContent="Srv "+state.server;
+    if(els.serverBtn)els.serverBtn.textContent="Srv "+currentServerName();
     els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
   }
 
@@ -919,11 +1057,11 @@ function render(){
     if(els.overlayStats){
       const fr=lang()==="FR";
       els.overlayStats.innerHTML=`
-        <span class="stat-num-a">A&nbsp;${state.totalPointsA}</span>
+        <span class="stat-num-a">${shortName("A")}&nbsp;${state.totalPointsA}</span>
         <span class="stat-label">${fr?"Points<br>totaux":"Total<br>points"}</span>
-        <span class="stat-num-b">${state.totalPointsB}&nbsp;B</span>`;
+        <span class="stat-num-b">${state.totalPointsB}&nbsp;${shortName("B")}</span>`;
     }
-    els.overlayWinner.textContent="🏆 Team "+state.winner+" wins!";
+    els.overlayWinner.textContent="🏆 "+nameOf(state.winner)+" wins!";
     els.overlayScore.textContent=state.sets.filter((_,i)=>i<=state.currentSet).map(s=>s.a+"-"+s.b).join("  ");
     els.matchOverlay.classList.add("show");
   } else {
@@ -948,6 +1086,23 @@ els.resetBtn.addEventListener("touchcancel",()=>{clearTimeout(resetTimer);els.re
 els.resetBtn.addEventListener("mousedown",()=>{els.resetBtn.classList.add("holding");resetTimer=setTimeout(doReset,800);});
 els.resetBtn.addEventListener("mouseup",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
 els.resetBtn.addEventListener("mouseleave",()=>{clearTimeout(resetTimer);els.resetBtn.classList.remove("holding");});
+
+// Click on A/B labels too
+document.addEventListener("click",function(e){
+  if(e.target.classList.contains("setsLabelCell")) openNameModal();
+});
+// Players button opens modal
+const playersBtn=document.getElementById("playersBtn");
+if(playersBtn) playersBtn.addEventListener("click",()=>openNameModal());
+
+document.getElementById("nameOkBtn").addEventListener("click",()=>closeNameModal(true));
+document.getElementById("nameCancelBtn").addEventListener("click",()=>closeNameModal(false));
+document.querySelectorAll("#nameModal input").forEach(inp=>{
+  inp.addEventListener("keydown",e=>{
+    if(e.key==="Enter") closeNameModal(true);
+    if(e.key==="Escape") closeNameModal(false);
+  });
+});
 
 if(window.speechSynthesis&&window.speechSynthesis.onvoiceschanged!==undefined)window.speechSynthesis.onvoiceschanged=()=>{};
 render();
