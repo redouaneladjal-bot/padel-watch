@@ -712,7 +712,19 @@ function currentGameScoreStr(){
     const second=state.server==="A"?b:a;
     return `${first} ${lang()==="FR"?"à":"to"} ${second}`;
   }
-  if(gm==="normal"&&a>=3&&b>=3){if(a===b)return t().deuce;const adv=a>b?"A":"B";return adv===state.server?t().advServer:t().advReceiver;}
+  if(gm==="normal"&&a>=3&&b>=3){
+    if(a===b)return t().deuce;
+    const adv=a>b?"A":"B";
+    const r=SERVER_ROTATION[state.serverPlayerIdx%4];
+    let advName;
+    if(adv===r.team){
+      advName=playerName(r.team,r.idx);
+    }else{
+      const partnerIdx=r.idx===1?2:1;
+      advName=playerName(adv,partnerIdx);
+    }
+    return lang()==="FR"?`Avantage ${advName}`:`Advantage ${advName}`;
+  }
   const aT=tennisWord(a),bT=tennisWord(b);
   const first=state.server==="A"?aT:bT,second=state.server==="A"?bT:aT;
   const allW=lang()==="FR"?"partout":"all";
