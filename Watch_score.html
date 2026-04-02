@@ -951,8 +951,9 @@ function cycleAudioMode(){
 
 function toggleServer(){
   if(state.matchStarted)return;
-  state.serverPlayerIdx=(state.serverPlayerIdx+1)%4;
-  state.server=SERVER_ROTATION[state.serverPlayerIdx%4].team;
+  const nextIdx=(state.serverPlayerIdx+1)%4;
+  state.serverPlayerIdx=nextIdx;
+  state.server=SERVER_ROTATION[nextIdx].team;
   state.servePos="right";
   vibrate(35);render();
   speak(currentServerName()+(lang()==="FR"?" au service":" to serve"));
