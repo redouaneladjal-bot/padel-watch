@@ -564,7 +564,9 @@ const state={
   totalPointsB:0,
   nameA1:"A1",nameA2:"A2",
   nameB1:"B1",nameB2:"B2",
-  serverPlayerIdx:0  // 0=A1,1=B1,2=A2,3=B2 cycling
+  serverPlayerIdx:0,  // 0=A1,1=B1,2=A2,3=B2 cycling
+  gamePointPlayed:false,
+  gamesPlayed:0
 };
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
@@ -715,15 +717,7 @@ function currentGameScoreStr(){
   if(gm==="normal"&&a>=3&&b>=3){
     if(a===b)return t().deuce;
     const adv=a>b?"A":"B";
-    const r=SERVER_ROTATION[state.serverPlayerIdx%4];
-    let advName;
-    if(adv===r.team){
-      advName=playerName(r.team,r.idx);
-    }else{
-      const partnerIdx=r.idx===1?2:1;
-      advName=playerName(adv,partnerIdx);
-    }
-    return lang()==="FR"?`Avantage ${advName}`:`Advantage ${advName}`;
+    return lang()==="FR"?`Avantage ${nameOf(adv)}`:`Advantage ${nameOf(adv)}`;
   }
   const aT=tennisWord(a),bT=tennisWord(b);
   const first=state.server==="A"?aT:bT,second=state.server==="A"?bT:aT;
@@ -780,7 +774,26 @@ function getDisplayScore(team){
   const l=["0","15","30","40","A"];return team==="A"?l[a]:l[b];
 }
 function finalScoreStr(){const lim=Math.min(state.currentSet,4);return Array.from({length:lim+1},(_,i)=>scoreJoin(state.sets[i].a,state.sets[i].b)).join(", ");}
-function announceGame(team,snap,setDone,matchNow){const srv=state.server;const gs=srv==="A"?scoreJoin(snap.a,snap.b):scoreJoin(snap.b,snap.a);if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}if(setDone){speakSequence(t().winsSet(team,gs,srv));return;}speakSequence(t().winsGame(team,gs,srv));}
+function announceGame(team,snap,setDone,matchNow){
+  const srv=state.server;
+  const gs=srv==="A"?scoreJoin(snap.a,snap.b):scoreJoin(snap.b,snap.a);
+  if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}
+  // 🇩🇿 Easter egg: 1 to 3
+  const viva = (snap.a===1&&snap.b===3)||(snap.a===3&&snap.b===1);
+  const vivaText = lang()==="FR" ? "Viva l'Algérie !" : "Viva l'Al-jé-rie!";
+  if(setDone){
+    const base = t().winsSet(team,gs,srv); // [teamWins, score, server]
+    const phrases = viva
+      ? [gs, vivaText, base[0], base[2]]   // score, viva, team wins, server
+      : base;
+    speakSequence(phrases); return;
+  }
+  const base = t().winsGame(team,gs,srv); // [teamWins, score, server]
+  const phrases = viva
+    ? [gs, vivaText, base[0], base[2]]     // score, viva, team wins, server
+    : base;
+  speakSequence(phrases);
+}
 
 function pointToDisplay(v, isWinner, gm){
   if(isTBGame()) return String(v);
@@ -812,9 +825,7 @@ function winGame(team){
   }
   if(!matchNow){
     if(state.tieBreak && state.tbInitialServer){
-      // New set: team that did NOT start TB serves first — find their next player
       const nextTeam = state.tbInitialServer === "A" ? "B" : "A";
-      // Advance idx until we reach the next player of nextTeam
       let tries=0;
       do {
         state.serverPlayerIdx = (state.serverPlayerIdx + 1) % 4;
@@ -828,6 +839,8 @@ function winGame(team){
     state.servePos = "right";
     state.tieBreak = false;
     state.tbInitialServer = state.server;
+    state.gamePointPlayed = false;
+    state.gamesPlayed = (state.gamesPlayed||0) + 1;
     // Announce tie-break game if now at 6-6
     const cur2=state.sets[state.currentSet];
     if(state.tieBreak && cur2.a===6 && cur2.b===6){
@@ -866,7 +879,7 @@ function isTBGame(){
   return state.tieBreak && cur.a===6 && cur.b===6;
 }
 
-function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.totalPointsA++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsA++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   // Set initial server on very first TB point
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA+1,b=state.pointB;
@@ -882,7 +895,7 @@ if(JSON.stringify(state.sets)===before&&!state.matchFinished){
   }
   if(!checkSpecialPoint())speak(currentGameScoreStr());
 }render();}
-function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.totalPointsB++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsB++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA,b=state.pointB+1;
   if(b>=7&&(b-a)>=2){winGame("B");}else{state.pointB++;}
@@ -949,19 +962,36 @@ function cycleAudioMode(){
   if(!isMuted()) speak(t().audioOn);
 }
 
+function canChangeServer(){
+  if(state.gamePointPlayed) return false;
+  if((state.gamesPlayed||0)===0) return true;  // jeu 1: all 4
+  if((state.gamesPlayed||0)===1) return true;  // jeu 2: swap within team
+  return false;
+}
+
 function toggleServer(){
-  if(state.matchStarted)return;
-  const nextIdx=(state.serverPlayerIdx+1)%4;
-  state.serverPlayerIdx=nextIdx;
-  state.server=SERVER_ROTATION[nextIdx].team;
+  if(!canChangeServer())return;
+  const cur=SERVER_ROTATION[state.serverPlayerIdx%4];
+  if((state.gamesPlayed||0)===0){
+    // Jeu 1: cycle all 4
+    const nextIdx=(state.serverPlayerIdx+1)%4;
+    state.serverPlayerIdx=nextIdx;
+    state.server=SERVER_ROTATION[nextIdx].team;
+  } else {
+    // Jeu 2: swap within serving team
+    const altIdx=SERVER_ROTATION.findIndex(r=>r.team===cur.team&&r.idx!==cur.idx);
+    if(altIdx<0)return;
+    state.serverPlayerIdx=altIdx;
+    state.server=SERVER_ROTATION[altIdx].team;
+  }
   state.servePos="right";
   vibrate(35);render();
   speak(currentServerName()+(lang()==="FR"?" au service":" to serve"));
 }
-function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;vibrate([40,40,40]);render();speak(t().reset);}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gamePointPlayed=false;state.gamesPlayed=0;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;vibrate([40,40,40]);render();speak(t().reset);}
 function doUndo(){
   if(!history.length)return;
-  const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer,pNA1=state.nameA1,pNA2=state.nameA2,pNB1=state.nameB1,pNB2=state.nameB2;
+  const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer,pNA1=state.nameA1,pNA2=state.nameA2,pNB1=state.nameB1,pNB2=state.nameB2,pGP=state.gamesPlayed;
   // Do NOT preserve tieBreak from current state — restore it from history
   const prev=history.pop();
   Object.keys(state).forEach(k=>delete state[k]);
@@ -970,7 +1000,7 @@ function doUndo(){
   state.gameMode=pGM;
   state.setsToWin=pST;
   state.tbInitialServer=pTBInit;
-  state.nameA1=pNA1;state.nameA2=pNA2;state.nameB1=pNB1;state.nameB2=pNB2;
+  state.nameA1=pNA1;state.nameA2=pNA2;state.nameB1=pNB1;state.nameB2=pNB2;state.gamesPlayed=pGP;
   // tieBreak is restored from history snapshot (correct value for that moment)
   vibrate([30,30]);render();speak(t().undo);
 }
@@ -1054,7 +1084,9 @@ function render(){
   els.audioBtn.style.opacity=state.audioMode==="MUTE"?"0.45":"1";
   if(els.serverBtn){
     if(els.serverBtn)els.serverBtn.textContent="Srv "+currentServerName();
-    els.serverBtn.classList.toggle("disabled-btn",state.matchStarted);
+    const srvEnabled=canChangeServer();
+  els.serverBtn.classList.toggle("disabled-btn",!srvEnabled);
+  els.serverBtn.style.pointerEvents=srvEnabled?"auto":"none";
   }
 
   const dis=state.matchFinished;
