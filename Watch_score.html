@@ -577,8 +577,8 @@ const state={
   serverPlayerIdx:0,  // 0=A1,1=B1,2=A2,3=B2 cycling
   gamePointPlayed:false,
   gamesPlayed:0,
-  playerStats:{0:0,1:0,2:0,3:0},  // total points played during each player's serve
-  playerStatsWon:{0:0,1:0,2:0,3:0}  // points WON by serving team during each player's serve
+  gamesServed:{0:0,1:0,2:0,3:0},  // games served per player slot
+  gamesWonOnServe:{0:0,1:0,2:0,3:0}  // games WON on serve per player slot
 };
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
@@ -892,10 +892,7 @@ function isTBGame(){
   return state.tieBreak && cur.a===6 && cur.b===6;
 }
 
-function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsA++;
-  state.playerStats[state.serverPlayerIdx]=(state.playerStats[state.serverPlayerIdx]||0)+1;
-  // Won on serve: team A scores AND team A is currently serving
-  if(state.server==="A") state.playerStatsWon[state.serverPlayerIdx]=(state.playerStatsWon[state.serverPlayerIdx]||0)+1;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsA++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   // Set initial server on very first TB point
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA+1,b=state.pointB;
@@ -911,10 +908,7 @@ if(JSON.stringify(state.sets)===before&&!state.matchFinished){
   }
   if(!checkSpecialPoint())speak(currentGameScoreStr());
 }render();}
-function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsB++;
-  state.playerStats[state.serverPlayerIdx]=(state.playerStats[state.serverPlayerIdx]||0)+1;
-  // Won on serve: team B scores AND team B is currently serving
-  if(state.server==="B") state.playerStatsWon[state.serverPlayerIdx]=(state.playerStatsWon[state.serverPlayerIdx]||0)+1;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsB++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA,b=state.pointB+1;
   if(b>=7&&(b-a)>=2){winGame("B");}else{state.pointB++;}
@@ -1007,7 +1001,7 @@ function toggleServer(){
   vibrate(35);render();
   speak(currentServerName()+(lang()==="FR"?" au service":" to serve"));
 }
-function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gamePointPlayed=false;state.gamesPlayed=0;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;state.playerStats={0:0,1:0,2:0,3:0};state.playerStatsWon={0:0,1:0,2:0,3:0};vibrate([40,40,40]);render();speak(t().reset);}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gamePointPlayed=false;state.gamesPlayed=0;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;state.gamesServed={0:0,1:0,2:0,3:0};state.gamesWonOnServe={0:0,1:0,2:0,3:0};vibrate([40,40,40]);render();speak(t().reset);}
 function doUndo(){
   if(!history.length)return;
   const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer,pNA1=state.nameA1,pNA2=state.nameA2,pNB1=state.nameB1,pNB2=state.nameB2,pGP=state.gamesPlayed;
@@ -1125,10 +1119,10 @@ function render(){
         <span class="stat-label">${fr?"Points<br>totaux":"Total<br>points"}</span>
         <span class="stat-num-b">${state.totalPointsB}&nbsp;${shortName("B")}</span>`;
     }
-    // Per-player stats Option B: won/total (%)
+    // Games won on serve per player
     if(els.overlayPlayerStats){
-      const ps  = state.playerStats    || {0:0,1:0,2:0,3:0};
-      const psW = state.playerStatsWon || {0:0,1:0,2:0,3:0};
+      const gs  = state.gamesServed     || {0:0,1:0,2:0,3:0};
+      const gw  = state.gamesWonOnServe || {0:0,1:0,2:0,3:0};
       const slots=[
         {idx:0, name:state.nameA1||"A1", color:"var(--grey)"},
         {idx:2, name:state.nameA2||"A2", color:"var(--grey)"},
@@ -1136,30 +1130,22 @@ function render(){
         {idx:3, name:state.nameB2||"B2", color:"var(--yellow)"},
       ];
       const fr=lang()==="FR";
-      const label=fr?"Efficacité au service":"Serve efficiency";
+      const label=fr?"Jeux gagnés au service":"Games won on serve";
       let html=`<div style="color:rgba(255,255,255,0.45);font-size:10px;text-align:center;margin:6px 0 3px;letter-spacing:1px;text-transform:uppercase">${label}</div>`;
       html+=`<table class="player-stats-table">`;
-      html+=`<tr><td colspan="3" class="ps-team-label">Team A</td></tr>`;
-      [slots[0],slots[1]].forEach(s=>{
-        const total=ps[s.idx]||0;
-        const won=psW[s.idx]||0;
-        const pct=total>0?Math.round(won/total*100):0;
-        html+=`<tr>
-          <td class="ps-name" style="color:${s.color}">${s.name}</td>
-          <td class="ps-bar-cell"><div class="ps-bar-bg"><div class="ps-bar-fill" style="width:${pct}%;background:${s.color}"></div></div></td>
-          <td class="ps-val" style="color:${s.color}">${won}/${total}<span style="font-size:10px;opacity:0.7"> (${pct}%)</span></td>
-        </tr>`;
-      });
-      html+=`<tr><td colspan="3" class="ps-team-label">Team B</td></tr>`;
-      [slots[2],slots[3]].forEach(s=>{
-        const total=ps[s.idx]||0;
-        const won=psW[s.idx]||0;
-        const pct=total>0?Math.round(won/total*100):0;
-        html+=`<tr>
-          <td class="ps-name" style="color:${s.color}">${s.name}</td>
-          <td class="ps-bar-cell"><div class="ps-bar-bg"><div class="ps-bar-fill" style="width:${pct}%;background:${s.color}"></div></div></td>
-          <td class="ps-val" style="color:${s.color}">${won}/${total}<span style="font-size:10px;opacity:0.7"> (${pct}%)</span></td>
-        </tr>`;
+      ["A","B"].forEach(team=>{
+        html+=`<tr><td colspan="3" class="ps-team-label">Team ${team}</td></tr>`;
+        const teamSlots=slots.filter(s=>SERVER_ROTATION[s.idx].team===team);
+        teamSlots.forEach(s=>{
+          const served=gs[s.idx]||0;
+          const won=gw[s.idx]||0;
+          const pct=served>0?Math.round(won/served*100):0;
+          html+=`<tr>
+            <td class="ps-name" style="color:${s.color}">${s.name}</td>
+            <td class="ps-bar-cell"><div class="ps-bar-bg"><div class="ps-bar-fill" style="width:${pct}%;background:${s.color}"></div></div></td>
+            <td class="ps-val" style="color:${s.color}">${won}/${served}<span style="font-size:10px;opacity:0.7"> (${pct}%)</span></td>
+          </tr>`;
+        });
       });
       html+=`</table>`;
       els.overlayPlayerStats.innerHTML=html;
