@@ -345,10 +345,11 @@
     z-index:100;
     flex-direction:column;
     align-items:center;
-    justify-content:center;
-    gap:12px;
-    padding:16px;
+    justify-content:flex-start;
+    gap:8px;
+    padding:14px 12px;
     text-align:center;
+    overflow-y:auto;
   }
 
   #matchOverlay.show{ display:flex; }
@@ -411,6 +412,14 @@
   .stat-num-a{ color:var(--grey); font-size:20px; font-weight:bold; }
   .stat-num-b{ color:var(--yellow); font-size:20px; font-weight:bold; }
   .stat-label{ color:rgba(255,255,255,0.6); font-size:11px; text-align:center; }
+  .player-stats-table{ width:100%; margin-top:8px; font-size:12px; border-collapse:collapse; }
+  .player-stats-table td{ padding:3px 6px; }
+  .player-stats-table .ps-name{ color:white; font-weight:bold; text-align:left; }
+  .player-stats-table .ps-val{ font-size:16px; font-weight:bold; text-align:right; min-width:28px; }
+  .player-stats-table .ps-bar-cell{ width:60%; padding:3px 6px; }
+  .ps-bar-bg{ background:rgba(255,255,255,0.1); border-radius:4px; height:8px; overflow:hidden; }
+  .ps-bar-fill{ height:8px; border-radius:4px; }
+  .ps-team-label{ color:rgba(255,255,255,0.5); font-size:10px; text-transform:uppercase; letter-spacing:1px; padding:4px 6px 1px; }
   #matchOverlay .resetOverlayBtn{
     margin-top:8px;
     background:var(--blue);
@@ -516,6 +525,7 @@
     <div class="winner" id="overlayWinner"></div>
     <div class="finalScore" id="overlayScore"></div>
     <div id="overlayStats"></div>
+    <div id="overlayPlayerStats"></div>
     <div style="display:flex;gap:12px;margin-top:8px;">
       <div class="resetOverlayBtn" id="undoOverlayBtn">↩ Undo</div>
       <div class="resetOverlayBtn" id="resetOverlayBtn">Reset</div>
@@ -566,7 +576,9 @@ const state={
   nameB1:"B1",nameB2:"B2",
   serverPlayerIdx:0,  // 0=A1,1=B1,2=A2,3=B2 cycling
   gamePointPlayed:false,
-  gamesPlayed:0
+  gamesPlayed:0,
+  playerStats:{0:0,1:0,2:0,3:0},  // total points played during each player's serve
+  playerStatsWon:{0:0,1:0,2:0,3:0}  // points WON by serving team during each player's serve
 };
 const history=[];
 let resetTimer=null,speechQueue=[],bannerTimer=null;
@@ -651,6 +663,7 @@ const els={
   overlayScore:ids("overlayScore"),resetOverlayBtn:ids("resetOverlayBtn"),
   undoOverlayBtn:ids("undoOverlayBtn"),
   overlayStats:ids("overlayStats"),
+  overlayPlayerStats:ids("overlayPlayerStats"),
   tbreakBtn:ids("tbreakBtn"),
   setsBtn:ids("setsBtn"),
   banner:ids("banner")
@@ -780,7 +793,7 @@ function announceGame(team,snap,setDone,matchNow){
   if(matchNow){speakSequence(t().winsMatch(team,finalScoreStr()));return;}
   // 🇩🇿 Easter egg: 1 to 3
   const viva = (snap.a===1&&snap.b===3)||(snap.a===3&&snap.b===1);
-  const vivaText = lang()==="FR" ? "Viva l'Algérie !" : "Viva l'Al-jé-rie!";
+  const vivaText = lang()==="FR" ? "Viva l'Algérie !" : "Veeva, l'Al-Jay-Ree!";
   if(setDone){
     const base = t().winsSet(team,gs,srv); // [teamWins, score, server]
     const phrases = viva
@@ -879,7 +892,10 @@ function isTBGame(){
   return state.tieBreak && cur.a===6 && cur.b===6;
 }
 
-function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsA++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementA(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsA++;
+  state.playerStats[state.serverPlayerIdx]=(state.playerStats[state.serverPlayerIdx]||0)+1;
+  // Won on serve: team A scores AND team A is currently serving
+  if(state.server==="A") state.playerStatsWon[state.serverPlayerIdx]=(state.playerStatsWon[state.serverPlayerIdx]||0)+1;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   // Set initial server on very first TB point
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA+1,b=state.pointB;
@@ -895,7 +911,10 @@ if(JSON.stringify(state.sets)===before&&!state.matchFinished){
   }
   if(!checkSpecialPoint())speak(currentGameScoreStr());
 }render();}
-function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsB++;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
+function incrementB(){if(state.matchFinished)return;saveHistory();state.matchStarted=true;state.gamePointPlayed=true;state.totalPointsB++;
+  state.playerStats[state.serverPlayerIdx]=(state.playerStats[state.serverPlayerIdx]||0)+1;
+  // Won on serve: team B scores AND team B is currently serving
+  if(state.server==="B") state.playerStatsWon[state.serverPlayerIdx]=(state.playerStatsWon[state.serverPlayerIdx]||0)+1;const before=JSON.stringify(state.sets);const gm=state.gameMode||"golden";if(isTBGame()){
   if(state.pointA===0&&state.pointB===0) state.tbInitialServer=state.server;
   const a=state.pointA,b=state.pointB+1;
   if(b>=7&&(b-a)>=2){winGame("B");}else{state.pointB++;}
@@ -988,7 +1007,7 @@ function toggleServer(){
   vibrate(35);render();
   speak(currentServerName()+(lang()==="FR"?" au service":" to serve"));
 }
-function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gamePointPlayed=false;state.gamesPlayed=0;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;vibrate([40,40,40]);render();speak(t().reset);}
+function doReset(){saveHistory();state.pointA=0;state.pointB=0;state.sets=Array(5).fill(null).map(()=>({a:0,b:0}));state.currentSet=0;state.matchFinished=false;state.winner=null;state.server="A";state.serverPlayerIdx=0;state.servePos="right";state.matchStarted=false;state.gamePointPlayed=false;state.gamesPlayed=0;state.gameHistory=[];state.totalPointsA=0;state.totalPointsB=0;state.playerStats={0:0,1:0,2:0,3:0};state.playerStatsWon={0:0,1:0,2:0,3:0};vibrate([40,40,40]);render();speak(t().reset);}
 function doUndo(){
   if(!history.length)return;
   const pAM=state.audioMode,pGM=state.gameMode,pST=state.setsToWin,pTBInit=state.tbInitialServer,pNA1=state.nameA1,pNA2=state.nameA2,pNB1=state.nameB1,pNB2=state.nameB2,pGP=state.gamesPlayed;
@@ -1105,6 +1124,45 @@ function render(){
         <span class="stat-num-a">${shortName("A")}&nbsp;${state.totalPointsA}</span>
         <span class="stat-label">${fr?"Points<br>totaux":"Total<br>points"}</span>
         <span class="stat-num-b">${state.totalPointsB}&nbsp;${shortName("B")}</span>`;
+    }
+    // Per-player stats Option B: won/total (%)
+    if(els.overlayPlayerStats){
+      const ps  = state.playerStats    || {0:0,1:0,2:0,3:0};
+      const psW = state.playerStatsWon || {0:0,1:0,2:0,3:0};
+      const slots=[
+        {idx:0, name:state.nameA1||"A1", color:"var(--grey)"},
+        {idx:2, name:state.nameA2||"A2", color:"var(--grey)"},
+        {idx:1, name:state.nameB1||"B1", color:"var(--yellow)"},
+        {idx:3, name:state.nameB2||"B2", color:"var(--yellow)"},
+      ];
+      const fr=lang()==="FR";
+      const label=fr?"Efficacité au service":"Serve efficiency";
+      let html=`<div style="color:rgba(255,255,255,0.45);font-size:10px;text-align:center;margin:6px 0 3px;letter-spacing:1px;text-transform:uppercase">${label}</div>`;
+      html+=`<table class="player-stats-table">`;
+      html+=`<tr><td colspan="3" class="ps-team-label">Team A</td></tr>`;
+      [slots[0],slots[1]].forEach(s=>{
+        const total=ps[s.idx]||0;
+        const won=psW[s.idx]||0;
+        const pct=total>0?Math.round(won/total*100):0;
+        html+=`<tr>
+          <td class="ps-name" style="color:${s.color}">${s.name}</td>
+          <td class="ps-bar-cell"><div class="ps-bar-bg"><div class="ps-bar-fill" style="width:${pct}%;background:${s.color}"></div></div></td>
+          <td class="ps-val" style="color:${s.color}">${won}/${total}<span style="font-size:10px;opacity:0.7"> (${pct}%)</span></td>
+        </tr>`;
+      });
+      html+=`<tr><td colspan="3" class="ps-team-label">Team B</td></tr>`;
+      [slots[2],slots[3]].forEach(s=>{
+        const total=ps[s.idx]||0;
+        const won=psW[s.idx]||0;
+        const pct=total>0?Math.round(won/total*100):0;
+        html+=`<tr>
+          <td class="ps-name" style="color:${s.color}">${s.name}</td>
+          <td class="ps-bar-cell"><div class="ps-bar-bg"><div class="ps-bar-fill" style="width:${pct}%;background:${s.color}"></div></div></td>
+          <td class="ps-val" style="color:${s.color}">${won}/${total}<span style="font-size:10px;opacity:0.7"> (${pct}%)</span></td>
+        </tr>`;
+      });
+      html+=`</table>`;
+      els.overlayPlayerStats.innerHTML=html;
     }
     els.overlayWinner.textContent="🏆 "+nameOf(state.winner)+" wins!";
     els.overlayScore.textContent=state.sets.filter((_,i)=>i<=state.currentSet).map(s=>s.a+"-"+s.b).join("  ");
