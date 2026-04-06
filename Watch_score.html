@@ -837,6 +837,11 @@ function winGame(team){
     else if(state.currentSet<4)state.currentSet++;
   }
   if(!matchNow){
+    // Track games served/won BEFORE advancing server
+    const srvIdx = state.serverPlayerIdx % 4;
+    state.gamesServed[srvIdx] = (state.gamesServed[srvIdx]||0) + 1;
+    if(state.server === team) state.gamesWonOnServe[srvIdx] = (state.gamesWonOnServe[srvIdx]||0) + 1;
+
     if(state.tieBreak && state.tbInitialServer){
       const nextTeam = state.tbInitialServer === "A" ? "B" : "A";
       let tries=0;
